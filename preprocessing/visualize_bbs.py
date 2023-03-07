@@ -1,9 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 
-COLUMNS = ['frame_num', 'camera', 'x1', 'y1', 'x2', 'y2', 'track']
-DATA_PATH = "/dcs/large/u2288122/Workspace/Multi-Camera-Trajectory-Forecasting/data/bounding_boxes/"
+COLUMNS = ['frame_num', 'obj_id', 'camera', 'x1', 'y1', 'x2', 'y2']
+DATA_PATH = os.path.join("/dcs/large/u2288122/Workspace/location-tensors/data/")
+TRACKING_DATA_PATH = os.path.join(DATA_PATH, "tracking_data")
+INPUT_CSV_PATH = os.path.join(TRACKING_DATA_PATH, "csv_data")
 #Add cam here to skip rows
 NUM_CAMS = 15
 ORIGINAL_IMAGE_WIDTH = 1920
@@ -13,12 +16,12 @@ IMAGE_WIDTH = 1920 // SCALE_DOWN_FACTOR
 IMAGE_HEIGHT = 1200 // SCALE_DOWN_FACTOR
 
 def tensor_generator(bounding_boxes):
-    frame = 1
+    frame = bounding_boxes.frame_num.unique().tolist()[0]
     last_frame = bounding_boxes.frame_num.unique().tolist()[-1]
     while(frame <= last_frame):
         frame += 1
-        current_boxes = bounding_boxes.loc[bounding_boxes.frame_num == frame, ['camera', 'x1', 'y1', 'x2', 'y2', 'track']].sort_values(by=["track", "camera"])
-        yield current_boxes[['camera', 'x1', 'y1', 'x2', 'y2']].to_numpy(), current_boxes.track.tolist()
+        current_boxes = bounding_boxes.loc[bounding_boxes.frame_num == frame, ['obj_id', 'camera', 'x1', 'y1', 'x2', 'y2']].sort_values(by=["obj_id", "camera"])
+        yield current_boxes[['camera', 'x1', 'y1', 'x2', 'y2']].to_numpy(), current_boxes.obj_id.tolist()
 
 
 def tensor2view(tensor, object_ids, num_cams=NUM_CAMS, width=IMAGE_WIDTH, height=IMAGE_HEIGHT):
@@ -30,7 +33,7 @@ def tensor2view(tensor, object_ids, num_cams=NUM_CAMS, width=IMAGE_WIDTH, height
 
 def load_and_preprocess_data(file_name):
     print(f"Loading bounding boxes from {file_name}...")
-    boxes_data = pd.read_csv(DATA_PATH + file_name)
+    boxes_data = pd.read_csv(os.path.join(INPUT_CSV_PATH, file_name))
 
     # Re-index the cameras.
     boxes_data[['camera']] = boxes_data[['camera']] - 1
@@ -39,12 +42,9 @@ def load_and_preprocess_data(file_name):
     boxes_data[['x1', 'y1', 'x2', 'y2']] = boxes_data[['x1', 'y1', 'x2', 'y2']] // SCALE_DOWN_FACTOR
 
     # Sort by frame_num
-    boxes_data = boxes_data.sort_values(by=['frame_num', 'camera', 'track'])
+    boxes_data = boxes_data.sort_values(by=['frame_num', 'camera'])
     
-    # Partition on hours
-    all_bounding_boxes = boxes_data.groupby('hour')
-    all_bounding_boxes = [all_bounding_boxes.get_group(x).drop(['hour'], axis=1) for x in all_bounding_boxes.groups]
-    return all_bounding_boxes
+    return boxes_data
     
 
 def display_views(footage, num_frames):
@@ -55,7 +55,7 @@ def display_views(footage, num_frames):
     plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
 
     prev_view = np.zeros((NUM_CAMS, IMAGE_HEIGHT, IMAGE_WIDTH))
-    for frame, view in footage[600::]:
+    for frame, view in footage:
         for k in range(view.shape[0]):
             if not np.array_equal(view[k], prev_view[k]):
                 ax[k//4][k%4].imshow(view[k])
@@ -65,21 +65,23 @@ def display_views(footage, num_frames):
     print()
 
 if __name__ == '__main__':
-    all_bounding_boxes = load_and_preprocess_data("all_bounding_boxes_day_1.csv")
+    bounding_boxes = load_and_preprocess_data("day_1_set_1.csv")
     footage = []
-    for bounding_boxes in all_bounding_boxes[0:1]:
-        num_frames = bounding_boxes.frame_num.unique().tolist()[-1]
-        print(f"Loaded {num_frames} timesteps...")
-        frame = 0
-        prev_view = np.zeros((NUM_CAMS, IMAGE_HEIGHT, IMAGE_WIDTH))
-        for tensor, ids in tensor_generator(bounding_boxes):
-            view = tensor2view(tensor, ids)
-            frame += 1
-            if np.array_equal(view, prev_view):
-                    continue
-            else:
-                footage.append((frame, view))
-                print(f"\rProgress: {round(frame * 100 / num_frames, 2)}%", end="")
-        print()
-        display_views(footage, num_frames)
-        #plt.close(fig)
+    num_frames = bounding_boxes.frame_num.unique().tolist()[-1]
+    print(f"Loaded {num_frames} timesteps...")
+    frame = 0
+    prev_view = np.zeros((NUM_CAMS, IMAGE_HEIGHT, IMAGE_WIDTH))
+    for tensor, ids in tensor_generator(bounding_boxes):
+        view = tensor2view(tensor, ids)
+        frame += 1
+        if np.array_equal(view, prev_view):
+                continue
+        else:
+            footage.append((frame, view))
+            print(f"\rProgress: {round(frame * 100 / num_frames, 2)}%", end="")
+    print()
+    display_views(footage, num_frames)
+    #plt.close(fig)
+
+# TO-DO: distinguish trajectory and tensor
+# TO-DO: def project_trajectory
