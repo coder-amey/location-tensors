@@ -1,0 +1,2 @@
+from preprocessing.trajectories_generator import generate_data
+generate_data()

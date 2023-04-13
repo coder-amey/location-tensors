@@ -64,24 +64,30 @@ def display_views(footage, num_frames):
         plt.pause(0.001)
     print()
 
+
+def project_trajectory(tensors, ids):
+    frame = 0
+    for tensor, obj_ids in zip(tensors, ids):
+        view = tensor2view(tensor, obj_ids)
+        frame += 1
+        footage.append((frame, view))
+        print(f"\rProgress: {round(frame * 100 / num_frames, 2)}%", end="")
+    print()
+    display_views(footage, num_frames)
+    
+
 if __name__ == '__main__':
     bounding_boxes = load_and_preprocess_data("day_1_set_1.csv")
     footage = []
     num_frames = bounding_boxes.frame_num.unique().tolist()[-1]
     print(f"Loaded {num_frames} timesteps...")
-    frame = 0
     prev_view = np.zeros((NUM_CAMS, IMAGE_HEIGHT, IMAGE_WIDTH))
-    for tensor, ids in tensor_generator(bounding_boxes):
-        view = tensor2view(tensor, ids)
-        frame += 1
-        if np.array_equal(view, prev_view):
-                continue
-        else:
-            footage.append((frame, view))
-            print(f"\rProgress: {round(frame * 100 / num_frames, 2)}%", end="")
-    print()
-    display_views(footage, num_frames)
-    #plt.close(fig)
-
+    tensors = []
+    ids = []
+    for tensor, obj_ids in tensor_generator(bounding_boxes):
+        tensors.append(tensor)
+        ids.append(obj_ids)
+    
+    project_trajectory(tensors, ids)
 # TO-DO: distinguish trajectory and tensor
 # TO-DO: def project_trajectory
