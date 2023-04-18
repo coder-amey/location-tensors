@@ -12,6 +12,18 @@ from global_config.global_config import (
 
 
 # File handling functions:
+def load_bbox_data(file_loc):
+    boxes_data = pd.read_csv(file_loc)
+
+    #Sort by frame_num
+    boxes_data = boxes_data.sort_values(by=['frame_num', 'camera', 'track'])
+    
+    #Partition on hours
+    partitions = boxes_data.groupby('hour')
+    partitions = [partitions.get_group(x).drop(['hour'], axis=1) for x in partitions.groups]
+    return partitions
+
+
 def load_trajectories_csv(data_path=CSV_DATA_PATH):
     # Concatenate the trajectories of all objects across days and sets.
     all_trajectories = pd.concat([
@@ -73,6 +85,15 @@ def tensor2trajectory(tensor):
 
 
 #Random
+def is_consecutive(list):
+    i = list[0]
+    for j in list[1::]:
+        if j - i > OCCLUSION_THRESHOLD:
+            return False
+        i = j
+    return True
+
+
 def compare(t1, t2):
     if len(t1) != len(t2):
         raise AttributeError(f"Unequal trajectories ({len(t1)} and {len(t2)})")
