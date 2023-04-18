@@ -10,11 +10,13 @@ from global_config.global_config import (
     COLUMNS, OCCLUSION_THRESHOLD, NUM_DAYS)
 
 
-def ETL():
+def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH, ccm_path=CROSS_CAM_MATCHES_PATH, save_to_files=True):
+    """Loads the raw bounding box data and persists them into intermediate hourly datasets"""
+    all_trajectories = pd.DataFrame()
     for day in range(1, NUM_DAYS):
-        all_bounding_boxes = load_bbox_data(os.path.join(ALL_BOUNDING_BOXES_PATH, f"all_bounding_boxes_day_{day}.csv"))
-        entrances_and_departures = load_bbox_data(os.path.join(ENT_DEP_PATH, f"entrances_and_departures_day_{day}.csv"))
-        cross_camera_matches = load_bbox_data(os.path.join(CROSS_CAM_MATCHES_PATH, f"day_{day}.csv"))
+        all_bounding_boxes = load_bbox_data(os.path.join(bbs_path, f"all_bounding_boxes_day_{day}.csv"))
+        entrances_and_departures = load_bbox_data(os.path.join(ent_dep_path, f"entrances_and_departures_day_{day}.csv"))
+        cross_camera_matches = load_bbox_data(os.path.join(ccm_path, f"day_{day}.csv"))
 
         set_id = 1
         # Process each hourly partition
@@ -39,6 +41,12 @@ def ETL():
                 except AssertionError:
                     print("Large occlusion was skipped.")
 
-            bounding_boxes = bounding_boxes[COLUMNS]
-            bounding_boxes[bounding_boxes["obj_id"] != "0"].to_csv(os.path.join(CSV_DATA_PATH, f"day_{day}_set_{set_id}.csv"), index=False)
+            bounding_boxes = bounding_boxes.loc[bounding_boxes["obj_id"] != "0", COLUMNS]
             set_id += 1
+            
+            if save_to_files:
+                bounding_boxes.to_csv(os.path.join(CSV_DATA_PATH, f"day_{day}_set_{set_id}.csv"), index=False)
+            
+            pd.concat(all_trajectories, bounding_boxes)
+            
+    return all_trajectories
