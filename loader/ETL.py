@@ -1,13 +1,15 @@
 #External imports
 import os
+import numpy as np
 import pandas as pd
 
 #Internal imports
 from utils.utils import (
-    load_bbox_data, is_consecutive)
+    load_bbox_data, store_pkl, is_consecutive)
 from global_config.global_config import (
-    ALL_BOUNDING_BOXES_PATH, CROSS_CAM_MATCHES_PATH, ENT_DEP_PATH, CSV_DATA_PATH,
-    COLUMNS, OCCLUSION_THRESHOLD, NUM_DAYS)
+    ALL_BOUNDING_BOXES_PATH, CROSS_CAM_MATCHES_PATH, ENT_DEP_PATH, CSV_DATA_PATH, TENSOR_DATA_PATH,
+    COLUMNS, NUM_DAYS, FEATURE_COLUMNS,
+    N_INPUT_TSTEPS, N_OUTPUT_TSTEPS)
 
 
 def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH, ccm_path=CROSS_CAM_MATCHES_PATH, save_to_files=True):
@@ -48,5 +50,47 @@ def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH
                 bounding_boxes.to_csv(os.path.join(CSV_DATA_PATH, f"day_{day}_set_{set_id}.csv"), index=False)
             
             pd.concat(all_trajectories, bounding_boxes)
-            
-    return all_trajectories
+    
+    # Separate each objects trajectory
+    object_trajectories = {id: df[FEATURE_COLUMNS].to_numpy() for id, df in all_trajectories.groupby('obj_id')}
+    
+    if save_to_files:
+        store_pkl(object_trajectories, os.path.join(TENSOR_DATA_PATH, "all_trajectories.pkl"))
+    
+    return object_trajectories
+
+
+def generate_tensor_dataset(trajectories_dict, n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS):
+    X = []
+    Y = []
+    for id, trajectory in trajectories_dict.items():
+        if trajectory.shape[0] >= (n_input_tsteps + n_output_tsteps):
+            x, y = trajectory2tensors(trajectory)
+            X.append(x)
+            Y.append(y)
+    X = np.vstack(X)
+    Y = np.vstack(Y)
+    return (X, Y)
+
+
+# Trajectory-tensor interchangability functions
+def trajectory2tensors(trajectory, n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS):
+    window_len = n_input_tsteps + n_output_tsteps
+    X = []
+    Y = []
+    for i in range(0, trajectory.shape[0] - window_len + 1):   #Right boundary is inclusive, hence +1.
+        X.append(trajectory[i: i+n_input_tsteps])
+        Y.append(trajectory[i+n_input_tsteps: i+window_len])
+    
+    X = np.array(X)
+    Y = np.array(Y)
+    return X, Y
+
+
+def tensor2trajectory(tensor):
+    trajectory = []
+    for t_step in tensor[:-1]:
+        trajectory.append(t_step[0])
+    for t_step in tensor[-1]:
+        trajectory.append(t_step)
+    return(trajectory)

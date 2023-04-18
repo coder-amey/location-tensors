@@ -7,8 +7,7 @@ import pickle
 #Internal imports
 from global_config.global_config import (
     CSV_DATA_PATH,
-    FEATURE_COLUMNS,
-    N_INPUT_TSTEPS, N_OUTPUT_TSTEPS)
+    FEATURE_COLUMNS, OCCLUSION_THRESHOLD)
 
 
 # File handling functions:
@@ -24,7 +23,8 @@ def load_bbox_data(file_loc):
     return partitions
 
 
-def load_trajectories_csv(data_path=CSV_DATA_PATH):
+def load_all_trajectories(data_path=CSV_DATA_PATH):
+    """Loads all trajectories persisted using the ETL.bbs2trajectories function."""
     # Concatenate the trajectories of all objects across days and sets.
     all_trajectories = pd.concat([
         pd.read_csv(os.path.join(data_path, file_name)) \
@@ -55,36 +55,7 @@ def load_pkl(input_file):
         raise
 
 
-# Trajectory-tensor interchangability functions
-def trajectory2tensors(trajectory, n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS):
-    window_len = n_input_tsteps + n_output_tsteps
-    X = []
-    Y = []
-    for i in range(0, trajectory.shape[0] - window_len + 1):   #Right boundary is inclusive, hence +1.
-        X.append(trajectory[i: i+n_input_tsteps])
-        Y.append(trajectory[i+n_input_tsteps: i+window_len])
-    
-    X = np.array(X)
-    Y = np.array(Y)
-    return X, Y
-
-
-def tensor2trajectory(tensor):
-    count = 0
-    trajectory = []
-    for t_step in tensor[:-1]:
-        trajectory.append(t_step[0])
-        count += 1
-    for t_step in tensor[-1]:
-        trajectory.append(t_step)
-        count += 1
-    
-    return(trajectory)
-
-
-
-
-#Random
+# Additional utilities
 def is_consecutive(list):
     i = list[0]
     for j in list[1::]:
