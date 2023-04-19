@@ -79,6 +79,7 @@ def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH
     
     if save_to_files:
         store_pkl(object_trajectories, os.path.join(TENSOR_DATA_PATH, "all_trajectories.pkl"))
+        store_pkl(all_trajectories, os.path.join(TENSOR_DATA_PATH, "trajectories_df.pkl"))
     
     return object_trajectories
 
