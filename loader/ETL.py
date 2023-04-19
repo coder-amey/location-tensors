@@ -12,6 +12,29 @@ from global_config.global_config import (
     N_INPUT_TSTEPS, N_OUTPUT_TSTEPS)
 
 
+# Trajectory-tensor interchangability functions
+def trajectory2tensors(trajectory, n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS):
+    window_len = n_input_tsteps + n_output_tsteps
+    X = []
+    Y = []
+    for i in range(0, trajectory.shape[0] - window_len + 1):   # Right boundary is inclusive, hence +1.
+        X.append(trajectory[i: i+n_input_tsteps])
+        Y.append(trajectory[i+n_input_tsteps: i+window_len])
+    
+    X = np.array(X)
+    Y = np.array(Y)
+    return X, Y
+
+
+def tensor2trajectory(tensor):
+    trajectory = []
+    for t_step in tensor[:-1]:
+        trajectory.append(t_step[0])
+    for t_step in tensor[-1]:
+        trajectory.append(t_step)
+    return(trajectory)
+
+
 def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH, ccm_path=CROSS_CAM_MATCHES_PATH, save_to_files=True):
     """Loads the raw bounding box data and persists them into intermediate hourly datasets"""
     all_trajectories = pd.DataFrame()
@@ -44,12 +67,12 @@ def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH
                     print("Large occlusion was skipped.")
 
             bounding_boxes = bounding_boxes.loc[bounding_boxes["obj_id"] != "0", COLUMNS]
-            set_id += 1
             
             if save_to_files:
                 bounding_boxes.to_csv(os.path.join(CSV_DATA_PATH, f"day_{day}_set_{set_id}.csv"), index=False)
-            
-            pd.concat(all_trajectories, bounding_boxes)
+
+            all_trajectories = pd.concat([all_trajectories, bounding_boxes], ignore_index=True)
+            set_id += 1
     
     # Separate each objects trajectory
     object_trajectories = {id: df[FEATURE_COLUMNS].to_numpy() for id, df in all_trajectories.groupby('obj_id')}
@@ -71,26 +94,3 @@ def generate_tensor_dataset(trajectories_dict, n_input_tsteps=N_INPUT_TSTEPS, n_
     X = np.vstack(X)
     Y = np.vstack(Y)
     return (X, Y)
-
-
-# Trajectory-tensor interchangability functions
-def trajectory2tensors(trajectory, n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS):
-    window_len = n_input_tsteps + n_output_tsteps
-    X = []
-    Y = []
-    for i in range(0, trajectory.shape[0] - window_len + 1):   #Right boundary is inclusive, hence +1.
-        X.append(trajectory[i: i+n_input_tsteps])
-        Y.append(trajectory[i+n_input_tsteps: i+window_len])
-    
-    X = np.array(X)
-    Y = np.array(Y)
-    return X, Y
-
-
-def tensor2trajectory(tensor):
-    trajectory = []
-    for t_step in tensor[:-1]:
-        trajectory.append(t_step[0])
-    for t_step in tensor[-1]:
-        trajectory.append(t_step)
-    return(trajectory)

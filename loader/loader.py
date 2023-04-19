@@ -32,19 +32,7 @@ def load_dataset(trajectories_dict=None, save_to_file=True):
     # Generate the tensors dataset from the trajectories
     dataset = generate_tensor_dataset(trajectories_dict)
     X, Y = dataset
-    # print(X.shape, Y.shape)
-
-    key = list(trajectories_dict.keys())[0]
-    orig_trajectory = trajectories_dict[key]
-    orig_tensor_X, orig_tensor_Y = trajectory2tensors(orig_trajectory)
-    total = len(orig_trajectory)
-    print(f"Orig. Traj:\nlen: {total}")
-    print(f"Orig. Tensors:\nX_len: {orig_tensor_X.shape}\tY_len: {orig_tensor_Y.shape}")
-    print(total, total - N_OUTPUT_TSTEPS, total - N_INPUT_TSTEPS, sep="\t")
-    reco_trajectory = tensor2trajectory(orig_tensor_Y)
-    #print(*reco_trajectory, sep="\n")
-    print(f"Reco. Traj:\nlen: {len(reco_trajectory)}")
-    compare(trajectories_dict[key][-(total - N_INPUT_TSTEPS):], reco_trajectory)
+    print(f"Dataset (with dimensions: {X.shape}, {Y.shape}) loaded successfully.") 
 
     # Store the dataset
     if save_to_file:
