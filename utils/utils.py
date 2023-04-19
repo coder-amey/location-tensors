@@ -64,12 +64,3 @@ def is_consecutive(list):
         i = j
     return True
 
-
-def compare(t1, t2):
-    if len(t1) != len(t2):
-        raise AttributeError(f"Unequal trajectories ({len(t1)} and {len(t2)})")
-    else:
-        for l1, l2 in zip(t1 , t2):
-            if not np.array_equal(l1, l2):
-                print(list(l1), list(l2), sep="\t")
-

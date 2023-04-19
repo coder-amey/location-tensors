@@ -91,3 +91,8 @@ if __name__ == '__main__':
     project_trajectory(tensors, ids)
 # TO-DO: distinguish trajectory and tensor
 # TO-DO: def project_trajectory
+
+# model -> predict -> tensors \
+#                               -> tensor2traj -> trajectories \
+#                                                               -> proj_traj -> traj2view -> footage[(frame, view)] \
+#                                                                                                                    -> display_views(footage)

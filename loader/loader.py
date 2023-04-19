@@ -5,9 +5,9 @@ import pandas as pd
 
 #Internal imports
 from utils.utils import (
-    load_pkl, store_pkl, compare)
+    load_pkl, store_pkl)
 from loader.ETL import (
-    generate_tensor_dataset, trajectory2tensors, tensor2trajectory)
+    generate_tensor_dataset)
 from global_config.global_config import (
     TENSOR_DATA_PATH, N_INPUT_TSTEPS, N_OUTPUT_TSTEPS)
 

@@ -60,7 +60,7 @@ def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH
                 
                     # print(frame, cam, track, next_cam, next_frame, next_track, sep="\t")
                     bounding_boxes.loc[(bounding_boxes["camera"] == cam) & (bounding_boxes["track"] == track), 'obj_id'] = f"{day}_{set_id}_{obj_id}"
-                    bounding_boxes.loc[(bounding_boxes["camera"] == cam) & (bounding_boxes["track"] == track), 'obj_id'] = f"{day}_{set_id}_{obj_id}"
+                    bounding_boxes.loc[(bounding_boxes["camera"] == next_cam) & (bounding_boxes["track"] == next_track), 'obj_id'] = f"{day}_{set_id}_{obj_id}"
                     obj_id += 1
                 
                 except AssertionError:
@@ -75,7 +75,8 @@ def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH
             set_id += 1
     
     # Separate each objects trajectory
-    object_trajectories = {id: df[FEATURE_COLUMNS].to_numpy() for id, df in all_trajectories.groupby('obj_id')}
+    all_trajectories = all_trajectories.groupby('obj_id')
+    object_trajectories = {id: df[FEATURE_COLUMNS].to_numpy() for id, df in all_trajectories}
     
     if save_to_files:
         store_pkl(object_trajectories, os.path.join(TENSOR_DATA_PATH, "all_trajectories.pkl"))
