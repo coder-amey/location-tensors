@@ -6,12 +6,8 @@ import os
 import pandas as pd
 
 #Internal imports
-from utils.utils import (
-    load_pkl, store_pkl)
-from loader.ETL import (
-    generate_tensor_dataset, trajectory2tensors, tensor2trajectory)
 from global_config.global_config import (
-    NUM_CAMS, ORIGINAL_IMAGE_WIDTH, ORIGINAL_IMAGE_HEIGHT, SCALE_DOWN_FACTOR, IMAGE_WIDTH, IMAGE_HEIGHT)
+    NUM_CAMS, SCALE_DOWN_FACTOR, IMAGE_WIDTH, IMAGE_HEIGHT)
 
 
 # IMPORTANT DEFINITIONS
@@ -41,7 +37,7 @@ def display_views(footage, num_cams=NUM_CAMS, width=IMAGE_WIDTH, height=IMAGE_HE
     for frame, view in enumerate(footage):
         for k in range(num_cams):
             if not np.array_equal(view[k], prev_view[k]):
-                ax[k//4][k%4].imshow(view[k], cmap="Set3", norm=colors.Normalize(vmin=1, vmax=11))
+                ax[k//4][k%4].imshow(view[k], cmap="Set3", norm=colors.Normalize(vmin=0, vmax=11))      # Background colour = 0
                 prev_view[k] = view[k]
         fig.suptitle(f"Frame {frame} / {num_frames} ({round(frame * 100 / num_frames, 2)}%)")
         plt.pause(0.005)
