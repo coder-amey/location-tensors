@@ -3,11 +3,12 @@ import numpy as np
 import os
 import pandas as pd
 import pickle
+import tensorflow as tf
 
 #Internal imports
 from global_config.global_config import (
     CSV_DATA_PATH,
-    FEATURE_COLUMNS, OCCLUSION_THRESHOLD)
+    FEATURE_COLUMNS, OCCLUSION_THRESHOLD, NUM_CAMS)
 
 
 # File handling functions:
@@ -53,6 +54,28 @@ def load_pkl(input_file):
     except:
         print("Error storing data pickle.")
         raise
+
+
+# Tensor-manipulation functions
+def tensor_encode_one_hot(tensor):
+    one_hot_tensor = np.vstack([    \
+        np.expand_dims( \
+            np.hstack([ \
+                tf.one_hot(example[:, 0], depth=NUM_CAMS), example[:, 1:]] \
+            ), axis=0)
+                for example in tensor])
+    return one_hot_tensor
+
+
+def tensor_decode_one_hot(one_hot_tensor):
+    tensor = np.vstack([    \
+        np.expand_dims( \
+            np.hstack([ \
+                np.expand_dims(np.argmax(example[:, 0:NUM_CAMS], axis=1), axis=1)   \
+                , example[:, NUM_CAMS:]] \
+            ), axis=0)
+                for example in one_hot_tensor])
+    return tensor
 
 
 # Additional utilities

@@ -83,16 +83,3 @@ def bbs2trajectories(bbs_path=ALL_BOUNDING_BOXES_PATH, ent_dep_path=ENT_DEP_PATH
         store_pkl(all_trajectories, os.path.join(TENSOR_DATA_PATH, "trajectories_df.pkl"))
     
     return object_trajectories
-
-
-def generate_tensor_dataset(trajectories_dict, n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS):
-    X = []
-    Y = []
-    for id, trajectory in trajectories_dict.items():
-        if trajectory.shape[0] >= (n_input_tsteps + n_output_tsteps):
-            x, y = trajectory2tensors(trajectory)
-            X.append(x)
-            Y.append(y)
-    X = np.vstack(X)
-    Y = np.vstack(Y)
-    return (X, Y)
