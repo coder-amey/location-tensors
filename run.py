@@ -9,26 +9,26 @@ model = lstm.load_model(name="prototype.ml")
 from global_config.global_config import TENSOR_DATA_PATH
 from loader.ETL import tensor2trajectory
 from loader.loader import generate_tensors
-from utils.utils import load_pkl
+from utils.utils import load_pkl, tensor_decode_one_hot, tensor_encode_one_hot
 
 import numpy as np
 import os
 
 obj_trajectories = load_pkl(os.path.join(TENSOR_DATA_PATH, "all_trajectories.pkl"))
-key = list(obj_trajectories.keys())[100]
+key = list(obj_trajectories.keys())[47]
 x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, save_to_file=False)
-y_encoded = lstm.tensor_encode_one_hot(y)
+y_encoded = tensor_encode_one_hot(y)
 print(f"I/O shapes: ({x.shape}), ({y_encoded.shape})")
 y_pred_encoded = lstm.predict(model, x, y_encoded)
 
 # Plot predictions
 from visualizer.visualizer import project_trajectories
-y_pred = lstm.tensor_decode_one_hot(y_pred_encoded.astype(int))
+y_pred = tensor_decode_one_hot(y_pred_encoded.astype(int))
 print(f"Output details: {y_pred_encoded.shape} -> {y_pred.shape} -> {len(tensor2trajectory(y_pred))}")
 print(f"Ground truth details: {y_encoded.shape} -> {y.shape} -> {len(tensor2trajectory(y))}")
 project_trajectories([tensor2trajectory(y), tensor2trajectory(y_pred)])
-print(y_pred[:, :, 1])
-print(y[:, :, 1])
+print(y_pred[:, :, 0])
+print(y[:, :, 0])
 exit()
 
 
