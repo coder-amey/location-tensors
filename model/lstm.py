@@ -36,7 +36,7 @@ class t_step_block(Layer):
 def combined_loss_fn(Y, Y_pred, num_cams=NUM_CAMS):
     CCE_loss = tf.keras.losses.CategoricalCrossentropy()
     MSE_loss = tf.keras.losses.MeanSquaredError()
-    agg_loss = 10 * CCE_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams])  \
+    agg_loss = 10000 * CCE_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams])  \
                 + MSE_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
     return(agg_loss)
 
