@@ -57,6 +57,7 @@ def load_pkl(input_file):
 
 
 # Tensor-manipulation functions
+"""
 def tensor_encode_one_hot(tensor):
     one_hot_tensor = np.vstack([    \
         np.expand_dims( \
@@ -76,6 +77,44 @@ def tensor_decode_one_hot(one_hot_tensor):
             ), axis=0)
                 for example in one_hot_tensor])
     return tensor
+"""
+# Tensor-manipulation functions
+def tensor_encode_one_hot(tensor):
+    one_hot_tensor = []
+    for object in tensor:
+        one_hot_tensor.append(
+            tf.expand_dims(
+                tf.concat(
+                    [tf.one_hot(object[:, 0], depth=NUM_CAMS), object[:, 1:]], axis=1
+                ),
+            axis=0)
+        )
+    return tf.concat(one_hot_tensor, axis=0)
+
+
+def tensor_decode_one_hot(one_hot_tensor):
+    tensor = []
+    for object in one_hot_tensor:
+        tensor.append(
+            tf.expand_dims(
+                tf.concat(
+                    [tf.cast(
+                        tf.expand_dims(
+                            tf.argmax(object[:, 0:NUM_CAMS], axis=1),
+                            axis=-1), dtype=tf.float32),
+                    object[:, NUM_CAMS:]], axis=1),
+                axis=0)
+            )
+    return tf.concat(tensor, axis=0)
+
+
+@tf.function
+def decode_2d_one_hot(one_hot_tensor):
+    cam_tensor = tf.cast(
+        tf.expand_dims(
+            tf.argmax(one_hot_tensor[:, 0:NUM_CAMS], axis=1), axis=-1), dtype=tf.float32)
+    pos_tensor = one_hot_tensor[:, NUM_CAMS:]
+    return tf.concat([cam_tensor, pos_tensor], axis=1)
 
 
 # Additional utilities
