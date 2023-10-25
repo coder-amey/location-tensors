@@ -6,8 +6,8 @@ parallel_objects = True
 if gpu_server:
     # Execute `module load cuda11.2`
     import os
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID";
-    os.environ["CUDA_VISIBLE_DEVICES"] = selected_gpu;
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = selected_gpu
 
     import tensorflow as tf
     # tf.compat.v1.disable_eager_execution()
@@ -22,16 +22,13 @@ if gpu_server:
             print(e)
 
 
-
 # Create/load model
-
-
 from model import custom_lstm as lstm
 
 # Untrained model
-# model, _, _ = lstm.train_model()
-# lstm.save_model(model, name="prototype_2.ml")
-model = lstm.load_model(name="advanced_lstm.ml")
+model, _, _ = lstm.train_model()
+lstm.save_model(model, name="prototype_giou.ml")
+# model = lstm.load_model(name="advanced_lstm.ml")
 
 # Partially trained model
 # model = lstm.load_model(name="customized_lstm.ml")
@@ -49,16 +46,17 @@ if not gpu_server:
     import numpy as np
     import os
 
-    obj_trajectories = load_pkl(os.path.join(TENSOR_DATA_PATH, "all_trajectories.pkl"))
+    obj_trajectories = load_pkl(os.path.join(TENSOR_DATA_PATH, "demo_trajectories.pkl"))
     
     if parallel_objects:
         Y = []
         Y_pred = []
-        for key in [47, 48]:
-            trajectory = list(obj_trajectories.keys())[key]
-            x, y = generate_tensors(trajectories_dict={trajectory: obj_trajectories[trajectory]}, save_to_file=False)
-            Y.append(y)
-            Y_pred.append(lstm.predict(model, x, tensor_encode_one_hot(y)))
+        # for key in ['1_11_5_61', '1_11_5_63']:
+            # trajectory = list(obj_trajectories.keys())[key]
+        x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key] \
+                    for key in ['1_11_5_61', '1_11_5_63']}, save_to_file=False)
+        Y.append(y)
+        Y_pred.append(lstm.predict(model, x, tensor_encode_one_hot(y)))
 
         trajectories = []
         for y, y_pred in zip(Y, Y_pred):
@@ -67,7 +65,7 @@ if not gpu_server:
         project_trajectories(trajectories)
 
     else:
-        key = list(obj_trajectories.keys())[47]
+        key = list(obj_trajectories.keys())['1_11_5_63']
         x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, save_to_file=False)
         y_encoded = tensor_encode_one_hot(y)
         print(f"I/O shapes: ({x.shape}), ({y_encoded.shape})")

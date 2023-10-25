@@ -3,12 +3,12 @@ import numpy as np
 import os
 import pickle
 import tensorflow as tf
+import tensorflow_addons as tfa
 
 from tensorflow import keras
 from keras import Model
 from keras.models import Sequential
-from keras.layers import Dense, Input, Layer, LSTMCell, Reshape, RNN
-from keras.layers.recurrent import LSTM
+from keras.layers import Dense, Input, Layer, LSTMCell, Reshape
 from keras.utils.vis_utils import plot_model
 
 #Internal imports
@@ -71,14 +71,14 @@ class lstm_cell(Layer):
     
 
 def combined_loss_fn(Y, Y_pred, num_cams=NUM_CAMS):
-    CCE_loss = tf.keras.losses.CategoricalCrossentropy()
-    MSE_loss = tf.keras.losses.MeanSquaredError()
-    agg_loss = CCE_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams])  \
-                + 0.001 * MSE_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
+    cam_loss = tf.keras.losses.CategoricalCrossentropy()
+    box_loss = tfa.losses.GIoULoss()
+    agg_loss = cam_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams])  \
+                + 0.001 * box_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
     return(agg_loss)
 
 
-def save_model(model, name="custom_lstm.ml", path=MODEL_PATH):
+def save_model(model, name="lstm_giou.ml", path=MODEL_PATH):
     model.save(os.path.join(MODEL_PATH, name))
 
 

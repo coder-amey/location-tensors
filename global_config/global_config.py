@@ -16,7 +16,7 @@ DEMO_DATA_PATH = os.path.join(BOUNDING_BOXES_DATA_PATH, "demo_dataset")
 COLUMNS = ['frame_num', 'obj_id', 'camera', 'x1', 'y1', 'x2', 'y2']
 FEATURE_COLUMNS = ['camera', 'x1', 'y1', 'x2', 'y2']
 T_MARGIN = 5        # Frame delta from average_transition delay
-MODE = "Generate"   # Generate OR Load
+MODE = "Load"   # Generate OR Load
 
 # MODEL PARAMS
 N_INPUT_TSTEPS = 4
