@@ -28,11 +28,15 @@ if gpu_server:
 
 from model import custom_lstm as lstm
 
+# Untrained model
 # model, _, _ = lstm.train_model()
-# lstm.save_model(model, name="customized_lstm.ml")
-# model = lstm.load_model(name="prototype.ml")
-model = lstm.load_model(name="customized_lstm.ml")
+# lstm.save_model(model, name="prototype_2.ml")
+model = lstm.load_model(name="advanced_lstm.ml")
 
+# Partially trained model
+# model = lstm.load_model(name="customized_lstm.ml")
+# model, _, _ = lstm.train_model(model=model)
+# lstm.save_model(model, name="advanced_lstm.ml")
 
 if not gpu_server:
     # Generate predictions

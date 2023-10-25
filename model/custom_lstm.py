@@ -26,11 +26,12 @@ class prediction_block(Layer):
     def __init__(self, num_classes=NUM_CAMS):
         super(prediction_block, self).__init__()
         self.classifier = Dense(units=num_classes, activation='softmax')
+        self.regression_activation = Dense(units=5, activation='tanh')
         self.regressor = Dense(units=4)
 
     def call(self, inputs):
         camera_classes = self.classifier(inputs)
-        positions = self.regressor(inputs)
+        positions = self.regressor(self.regression_activation(inputs))
         return tf.concat([camera_classes, positions], axis=1)
 
 class lstm_cell(Layer):
@@ -73,7 +74,7 @@ def combined_loss_fn(Y, Y_pred, num_cams=NUM_CAMS):
     CCE_loss = tf.keras.losses.CategoricalCrossentropy()
     MSE_loss = tf.keras.losses.MeanSquaredError()
     agg_loss = CCE_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams])  \
-                + 0.0001 * MSE_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
+                + 0.001 * MSE_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
     return(agg_loss)
 
 
@@ -136,7 +137,7 @@ def train_model(model=None, dataset=None):
 
     # Training 
     print("Training the model...")
-    logs = model.fit(X_train, Y_train_encoded, batch_size=8, epochs=100)
+    logs = model.fit(X_train, Y_train_encoded, batch_size=16, epochs=50)
     print("Model training completed.")
     print(logs.history)
 

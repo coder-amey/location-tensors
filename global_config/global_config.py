@@ -10,10 +10,13 @@ MODEL_PATH = os.path.join(DATA_PATH, "saved_models")
 ALL_BOUNDING_BOXES_PATH = os.path.join(BOUNDING_BOXES_DATA_PATH, "bounding_boxes")
 CROSS_CAM_MATCHES_PATH = os.path.join(BOUNDING_BOXES_DATA_PATH, "cross_camera_matches")
 ENT_DEP_PATH = os.path.join(BOUNDING_BOXES_DATA_PATH, "entrances_and_departures")
+DEMO_DATA_PATH = os.path.join(BOUNDING_BOXES_DATA_PATH, "demo_dataset")
 
 # DATASET PARAMS
 COLUMNS = ['frame_num', 'obj_id', 'camera', 'x1', 'y1', 'x2', 'y2']
 FEATURE_COLUMNS = ['camera', 'x1', 'y1', 'x2', 'y2']
+T_MARGIN = 5
+MODE = "Load"
 
 # MODEL PARAMS
 N_INPUT_TSTEPS = 4
