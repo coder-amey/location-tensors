@@ -1,4 +1,8 @@
 To-do:
-SIOU scores
-Plot tensors
+Training:   change approach, get losses
+            Try regularization
+
+Obtain metrics:
+    [AP(which, where), PR(which, where), SIOU, GIOU?]
+
 THESIS!!!!

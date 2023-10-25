@@ -1,6 +1,9 @@
 gpu_server = False
+parallel_objects = (not gpu_server) and False
 selected_gpu = "0"
-parallel_objects = True
+
+mode = "new"  # new or load
+model_name = "prototype_giou_cce.ml"
 
 # Setup the server environment
 if gpu_server:
@@ -21,14 +24,18 @@ if gpu_server:
         except RuntimeError as e:
             print(e)
 
-
 # Create/load model
 from model import custom_lstm as lstm
 
-# Untrained model
-model, _, _ = lstm.train_model()
-lstm.save_model(model, name="prototype_giou.ml")
-# model = lstm.load_model(name="advanced_lstm.ml")
+if mode == "new":
+    # Untrained model
+    model, _, _ = lstm.train_model()
+    lstm.save_model(model, name="prototype_giou_gpu.ml")
+
+elif mode == "load":
+    # Trained model
+    model = lstm.load_model(name="prototype_giou_gpu.ml")
+
 
 # Partially trained model
 # model = lstm.load_model(name="customized_lstm.ml")
@@ -51,12 +58,12 @@ if not gpu_server:
     if parallel_objects:
         Y = []
         Y_pred = []
-        # for key in ['1_11_5_61', '1_11_5_63']:
+        for key in ['10_13_12_106_10_13_13_190', '10_13_12_107_10_13_13_195']:
             # trajectory = list(obj_trajectories.keys())[key]
-        x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key] \
-                    for key in ['1_11_5_61', '1_11_5_63']}, save_to_file=False)
-        Y.append(y)
-        Y_pred.append(lstm.predict(model, x, tensor_encode_one_hot(y)))
+            x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, \
+                 save_to_file=False)
+            Y.append(y)
+            Y_pred.append(lstm.predict(model, x, tensor_encode_one_hot(y)))
 
         trajectories = []
         for y, y_pred in zip(Y, Y_pred):
@@ -65,7 +72,8 @@ if not gpu_server:
         project_trajectories(trajectories)
 
     else:
-        key = list(obj_trajectories.keys())['1_11_5_63']
+        # key = list(obj_trajectories.keys())['1_11_5_63']
+        key = '10_13_12_106_10_13_13_190'
         x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, save_to_file=False)
         y_encoded = tensor_encode_one_hot(y)
         print(f"I/O shapes: ({x.shape}), ({y_encoded.shape})")
@@ -77,37 +85,7 @@ if not gpu_server:
         project_trajectories([tensor2trajectory(y), tensor2trajectory(y_pred)])
         
         # Debug
-        # print(y_pred_encoded[:, :, 0:15])
-        # print(y_pred[:, :, 0])
-        # print(y[:, :, 0])
-        # print(y[0, :, :])
-        print(y_pred[0, :, :] - y[0, :, :])
-        # print(y[-1, :, :])
-        print(y_pred[-1, :, :] - y[-1, :, :])
-    
-    exit()
-
-
-    '''
-    x = np.expand_dims(X_test[5,:,:], axis=0)
-    y = np.expand_dims(Y_test_encoded[5,:,:], axis=0)
-    #TESTS
-
-
-    from loader.ETL import bbs2trajectories
-    # obj_trajectories = bbs2trajectories()
-    # dataset = generate_tensors(save_to_file=True)
-    # test = load_dataset()
-
-    from utils.utils import load_pkl
-    from global_config.global_config import TENSOR_DATA_PATH, N_INPUT_TSTEPS, N_OUTPUT_TSTEPS
-    from visualizer.visualizer import project_trajectories
-    import os
-    import pandas as pd
-    trajectories_df = load_pkl(os.path.join(TENSOR_DATA_PATH, "trajectories_df.pkl"))
-    obj_trajectories = load_pkl(os.path.join(TENSOR_DATA_PATH, "all_trajectories.pkl"))
-    trajectories_df = trajectories_df.filter(lambda df: len(df) >= N_INPUT_TSTEPS + N_OUTPUT_TSTEPS).groupby('obj_id')
-
-    keys = list(obj_trajectories.keys())
-    # print(f"{keys[0]}:\n{obj_trajectories[keys[0]]}")
-    footage = project_trajectories([obj_trajectories[keys[i]] for i in range(50, 55)])'''
+        print(f"Pred[0]:\n{y_pred[0, :, :]}")
+        print(f"Pred_diff[0]:\n{y_pred[0, :, :] - y[0, :, :]}")
+        print(f"Pred[-1]:{y_pred[-1, :, :]}")
+        print(f"Pred_diff[-1]:\n{y_pred[-1, :, :] - y[-1, :, :]}")
