@@ -1,5 +1,6 @@
 #External imports
 from math import floor
+import numpy as np
 import os
 import pandas as pd
 import warnings
@@ -270,8 +271,9 @@ print(f"Simultaneous boxes:\n{conf_sim_bbs}\nSimultaneous objects:\n{conf_sim_ob
 
 # GENERATE THE TRAJECTORIES
 if MODE == "Generate":
-	demo_trajectories = {id: conf_sim_bbs.loc[conf_sim_bbs.id == id, \
-							FEATURE_COLUMNS].to_numpy() \
-							for id in conf_sim_objs.index.tolist()}
+	demo_trajectories = {f"{row.id_dep}_{row.id_ent}": np.vstack(\
+		(conf_sim_bbs.loc[conf_sim_bbs.id == row.id_dep, FEATURE_COLUMNS].to_numpy(), \
+		conf_sim_bbs.loc[conf_sim_bbs.id == row.id_ent, FEATURE_COLUMNS].to_numpy())) \
+							for _, row in confirmed_sim_matches.iterrows()}
 	store_pkl(demo_trajectories, os.path.join(TENSOR_DATA_PATH, \
 										   "demo_trajectories.pkl"))
