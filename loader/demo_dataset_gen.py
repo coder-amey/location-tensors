@@ -9,7 +9,7 @@ warnings.filterwarnings('ignore', category=pd.core.common.SettingWithCopyWarning
 from utils.utils import store_pkl
 from global_config.global_config import (
     ALL_BOUNDING_BOXES_PATH, CROSS_CAM_MATCHES_PATH, ENT_DEP_PATH, \
-	TENSOR_DATA_PATH, NUM_DAYS, FEATURE_COLUMNS, T_MARGIN, MODE)
+	TENSOR_DATA_PATH, DEMO_DATA_PATH, NUM_DAYS, FEATURE_COLUMNS, T_MARGIN, MODE)
 
 ORIGINAL_IMAGE_WIDTH = 1920
 ORIGINAL_IMAGE_HEIGHT = 1200
@@ -106,14 +106,16 @@ if MODE == "Generate":
 	sim_objs = all_objs[all_objs.index.isin(sim_obj_ids)].copy()
 
 	# STORE THE DATAFRAMES
-	all_bbs.to_csv("demo_dataset/all_boxes.csv", index=False)
-	all_objs.to_csv("demo_dataset/all_objects.csv")
-	sim_objs.to_csv("demo_dataset/simultaneous_objects.csv")
+	all_bbs.to_csv(os.path.join(DEMO_DATA_PATH, f"all_boxes.csv"), index=False)
+	all_objs.to_csv(os.path.join(DEMO_DATA_PATH, f"all_objects.csv"))
+	sim_objs.to_csv(os.path.join(DEMO_DATA_PATH, f"simultaneous_objects.csv"))
 
 elif MODE == "Load":
-	all_bbs = pd.read_csv("demo_dataset/all_boxes.csv")
-	all_objs = pd.read_csv( "demo_dataset/all_objects.csv", index_col='id')
-	sim_objs = pd.read_csv("demo_dataset/simultaneous_objects.csv", index_col='id')
+	all_bbs = pd.read_csv(os.path.join(DEMO_DATA_PATH, f"all_boxes.csv"))
+	all_objs = pd.read_csv( os.path.join(DEMO_DATA_PATH, \
+								f"all_objects.csv"), index_col='id')
+	sim_objs = pd.read_csv(os.path.join(DEMO_DATA_PATH, \
+								f"simultaneous_objects.csv"), index_col='id')
 
 print(f"All boxes:\n{all_bbs}\nAll objects:\n{all_objs}\nSimultaneous objects:\n{sim_objs}\n")
 
@@ -176,13 +178,16 @@ if MODE == "Generate":
 												index=consolidated_ent_deps.index)
 	
 	# STORE THE MATCH AND TRANSIT DATA
-	matched_objs.to_csv("demo_dataset/matched_objects.csv", index=False)
-	consolidated_ent_deps.to_csv("demo_dataset/consolidated_ent_deps.csv")
+	matched_objs.to_csv(os.path.join(DEMO_DATA_PATH, \
+								  f"matched_objects.csv"), index=False)
+	consolidated_ent_deps.to_csv(os.path.join(DEMO_DATA_PATH, \
+								f"consolidated_ent_deps.csv"))
 
 elif MODE == "Load":
-	matched_objs = pd.read_csv("demo_dataset/matched_objects.csv")
-	consolidated_ent_deps = pd.read_csv("demo_dataset/consolidated_ent_deps.csv", \
-									 index_col=["dep_cam_part", "ent_cam_part"])
+	matched_objs = pd.read_csv(os.path.join(DEMO_DATA_PATH, f"matched_objects.csv"))
+	consolidated_ent_deps = pd.read_csv(os.path.join(DEMO_DATA_PATH, \
+									f"consolidated_ent_deps.csv"), \
+									index_col=["dep_cam_part", "ent_cam_part"])
 
 print("Matched objects:\n", matched_objs)
 print("Consolidated entrances & departures:\n", consolidated_ent_deps)
@@ -246,14 +251,20 @@ if MODE == "Generate":
 	conf_sim_objs = all_objs[all_objs.index.isin(conf_sim_obj_ids)].copy()
 
 	# STORE THE DATASET
-	conf_sim_bbs.to_csv("demo_dataset/confirmed_simultaneous_boxes.csv", index=False)
-	conf_sim_objs.to_csv("demo_dataset/confirmed_simultaneous_objects.csv")
-	confirmed_sim_matches.to_csv("demo_dataset/confirmed_simultaneous_matches.csv", index=False)
+	conf_sim_bbs.to_csv(os.path.join(DEMO_DATA_PATH, \
+							f"confirmed_simultaneous_boxes.csv"), index=False)
+	conf_sim_objs.to_csv(os.path.join(DEMO_DATA_PATH, \
+							f"confirmed_simultaneous_objects.csv"))
+	confirmed_sim_matches.to_csv(os.path.join(DEMO_DATA_PATH, \
+							f"confirmed_simultaneous_matches.csv"), index=False)
 
 elif MODE == "Load":
-	conf_sim_bbs = pd.read_csv("demo_dataset/confirmed_simultaneous_boxes.csv")
-	conf_sim_objs = pd.read_csv("demo_dataset/confirmed_simultaneous_objects.csv", index_col='id')
-	confirmed_sim_matches = pd.read_csv("demo_dataset/confirmed_simultaneous_matches.csv")
+	conf_sim_bbs = pd.read_csv(os.path.join(DEMO_DATA_PATH, \
+							f"confirmed_simultaneous_boxes.csv"))
+	conf_sim_objs = pd.read_csv(os.path.join(DEMO_DATA_PATH, \
+							f"confirmed_simultaneous_objects.csv"), index_col='id')
+	confirmed_sim_matches = pd.read_csv(os.path.join(DEMO_DATA_PATH, \
+							f"confirmed_simultaneous_matches.csv"))
 
 print(f"Simultaneous boxes:\n{conf_sim_bbs}\nSimultaneous objects:\n{conf_sim_objs}\nSimultaneous matches:\n{confirmed_sim_matches}\n")
 
