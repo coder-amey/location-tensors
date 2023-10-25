@@ -14,7 +14,8 @@ from keras.utils.vis_utils import plot_model
 #Internal imports
 from global_config.global_config import (
     MODEL_PATH,
-    N_INPUT_TSTEPS, N_OUTPUT_TSTEPS, NUM_CAMS, NUM_FEATURES)
+    N_INPUT_TSTEPS, N_OUTPUT_TSTEPS, NUM_CAMS, NUM_FEATURES,
+    EPOCHS, TRAIN_BATCH_SIZE, TEST_BATCH_SIZE)
 from loader.loader import load_dataset
 from utils.utils import (
     tensor_decode_one_hot, decode_2d_one_hot)
@@ -26,7 +27,7 @@ class prediction_block(Layer):
     def __init__(self, num_classes=NUM_CAMS):
         super(prediction_block, self).__init__()
         self.classifier = Dense(units=num_classes, activation='softmax')
-        self.regression_activation = Dense(units=5, activation='tanh')
+        self.regression_activation = Dense(units=5, activation='sigmoid')
         self.regressor = Dense(units=4)
 
     def call(self, inputs):
@@ -71,10 +72,10 @@ class lstm_cell(Layer):
     
 
 def combined_loss_fn(Y, Y_pred, num_cams=NUM_CAMS):
-    cam_loss = tf.keras.losses.CategoricalCrossentropy()
-    box_loss = tfa.losses.GIoULoss()
-    agg_loss = cam_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams])  \
-                + 0.001 * box_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
+    cam_loss = tf.keras.losses.CategoricalCrossentropy()    # ~ 2.0
+    box_loss = tfa.losses.GIoULoss()                        # < 2.0
+    agg_loss = 4 * cam_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams]) + \
+        10 * box_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
     return(agg_loss)
 
 
@@ -129,7 +130,7 @@ def train_model(model=None, dataset=None):
 
     print(f"\t\tX\t\t\tY\t\tY_encoded")
     print(f"train\t{X_train.shape}\t{Y_train.shape}\t{Y_train_encoded.shape}")
-    print(f"train\t{X_test.shape}\t{Y_test.shape}\t{Y_test_encoded.shape}")
+    print(f"test\t{X_test.shape}\t{Y_test.shape}\t{Y_test_encoded.shape}")
     
     # Load the model
     if model is None:
@@ -137,13 +138,13 @@ def train_model(model=None, dataset=None):
 
     # Training 
     print("Training the model...")
-    logs = model.fit(X_train, Y_train_encoded, batch_size=16, epochs=50)
+    logs = model.fit(X_train, Y_train_encoded, batch_size=TRAIN_BATCH_SIZE, epochs=EPOCHS)
     print("Model training completed.")
     print(logs.history)
 
     # Evaluation
     print("Testing the model...")
-    results = model.evaluate(X_test, Y_test_encoded, batch_size=128)
+    results = model.evaluate(X_test, Y_test_encoded, batch_size=TEST_BATCH_SIZE)
     print("Results")
     print(results)
     model.predict(X_test)
