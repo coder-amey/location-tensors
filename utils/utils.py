@@ -108,7 +108,6 @@ def tensor_decode_one_hot(one_hot_tensor):
     return tf.concat(tensor, axis=0)
 
 
-@tf.function
 def decode_2d_one_hot(one_hot_tensor):
     cam_tensor = tf.cast(
         tf.expand_dims(

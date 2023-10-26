@@ -29,8 +29,9 @@ from model import custom_lstm as lstm
 
 if mode == "new":
     # Untrained model
-    model, _, _ = lstm.train_model()
-    lstm.save_model(model, name="prototype_giou_gpu.ml")
+    model, results, logs = lstm.train_model()
+    print(f"Results:\n{results}")
+    # lstm.save_model(model, name="prototype_giou_gpu.ml")
 
 elif mode == "load":
     # Trained model
