@@ -28,11 +28,11 @@ OCCLUSION_THRESHOLD = 6
 RANDOM_SEED = 47
 TRAIN_TEST_SPLIT = 0.25
 NUM_FEATURES = 5
-EPOCHS = 50
+EPOCHS = 100
 TRAIN_BATCH_SIZE = 64
 TEST_BATCH_SIZE = 128
 CAM_LOSS = CategoricalCrossentropy()
-BOX_LOSS = GIoULoss()           # GIoULoss() or CategoricalCrossentropy()
+BOX_LOSS = GIoULoss()           # GIoULoss() or MeanSquaredError()
 CAM_LOSS_WT = 100        # Needs motivation
 BOX_LOSS_WT = 400        # MSE ~ 500000 -> 0.001; GIOU ~ 2 -> 400
 

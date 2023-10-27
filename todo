@@ -1,9 +1,9 @@
 To-do:
-Training:   change approach, get losses
-            Try one-many approach
-            Try regularization
+Train models for 100 epochs
+Design code for retrieving metrics
+
 
 Obtain metrics:
-    [AP(which, where), PR(which, where), SIOU, GIOU?]
+    [AP(which, where), PR(which, where), SIOU]
 
 THESIS!!!!

@@ -1,9 +1,9 @@
-gpu_server = False
+gpu_server = True
 parallel_objects = (not gpu_server) and True
 selected_gpu = "0"
 
-mode = "load"  # new, load or enhance
-model_name = "robust_lstm_mse_gpu.ml" # "robust_lstm.ml"
+mode = "new"  # new, load or enhance
+model_name = "robust_lstm_giou_ep100.ml" # "robust_lstm.ml"
 
 """
 CHECKLIST
@@ -46,7 +46,6 @@ if mode == "new":
     # Untrained model
     model, logs = lstm.train_model()
     lstm.save_model(model, logs, name=model_name)
-    print(f"Results:\n{results}")
 
 elif mode == "load":
     # Trained model
@@ -68,8 +67,32 @@ if not gpu_server:
     from utils.utils import load_pkl, tensor_decode_one_hot, tensor_encode_one_hot
     from visualizer.visualizer import project_trajectories
 
+    
+    import matplotlib.pyplot as plt
     import numpy as np
     import os
+
+    print("Training curves:")
+    cam_losses = [key for key in logs['train_log'].keys() if 'class' in key]
+    box_losses = [key for key in logs['train_log'].keys() if 'reg' in key]
+
+    plt.plot(logs['train_log']['loss'])
+    plt.title(f'Training Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.show()
+
+    plt.plot([logs['train_log'][key] for key in cam_losses])
+    plt.title(f'Classification Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.show()
+
+    plt.plot([logs['train_log'][key] for key in box_losses])
+    plt.title(f'Regression Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.show()
 
     obj_trajectories = load_pkl(os.path.join(TENSOR_DATA_PATH, "demo_trajectories.pkl"))
     
@@ -81,7 +104,7 @@ if not gpu_server:
             x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, \
                  save_to_file=False)
             Y.append(y)
-            Y_pred.append(lstm.predict(model, x, tensor_encode_one_hot(y)))
+            Y_pred.append(lstm.predict(model, x))
 
         trajectories = []
         for y, y_pred in zip(Y, Y_pred):
@@ -95,7 +118,7 @@ if not gpu_server:
         x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, save_to_file=False)
         y_encoded = tensor_encode_one_hot(y)
         print(f"I/O shapes: ({x.shape}), ({y_encoded.shape})")
-        y_pred, y_pred_encoded = lstm.predict(model, x, y_encoded, debug=True)
+        y_pred, y_pred_encoded = lstm.predict(model, x)
 
         # Plot predictions
         print(f"Output details: {y_pred_encoded.shape} -> {y_pred.shape} -> {len(tensor2trajectory(y_pred))}")

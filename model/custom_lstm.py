@@ -128,15 +128,16 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 	print("Model training completed.")
 
 	# Evaluation
-	logs["test_log"] = test_model(model, X_test, targets=targets_test, test_batch_size=test_batch_size)
+	logs['test_log'] = {key: value for key, value in zip(logs['train_log'].keys(), \
+		test_model(model, X_test, targets=targets_test, test_batch_size=test_batch_size))}
 
 	return model, logs
 
 
 def test_model(model, X_test, Y_test=None, Y_test_encoded=None, targets=None, test_batch_size=TEST_BATCH_SIZE):
-	assert(1 == sum([1 for param in [Y_test, Y_test_encoded, targets] \
+	assert 1 == sum([1 for param in [Y_test, Y_test_encoded, targets] \
 			if param is not None]), "Pass any one of the three arguments: \
-				Y_test, Y_test_encoded or targets")
+				Y_test, Y_test_encoded or targets"
 	print("Testing the model...")
 	if targets is None:
 		if Y_test_encoded is None:
