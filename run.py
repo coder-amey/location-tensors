@@ -3,7 +3,7 @@ parallel_objects = (not gpu_server) and False
 selected_gpu = "0"
 
 mode = "new"  # new or load
-model_name = "prototype_giou_cce.ml"
+model_name = "robust_lstm.ml" # "robust_lstm.ml"
 
 # Setup the server environment
 if gpu_server:
@@ -30,12 +30,12 @@ from model import custom_lstm as lstm
 if mode == "new":
     # Untrained model
     model, results, logs = lstm.train_model()
-    print(f"Results:\n{results}")
-    # lstm.save_model(model, name="prototype_giou_gpu.ml")
+    # lstm.save_model(model, name=model_name)
+    # print(f"Results:\n{results}")
 
 elif mode == "load":
     # Trained model
-    model = lstm.load_model(name="prototype_giou_gpu.ml")
+    model = lstm.load_model(name=model_name)
 
 
 # Partially trained model

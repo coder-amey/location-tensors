@@ -1,4 +1,6 @@
 import os
+from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow_addons.losses import GIoULoss
 
 # PATHS
 DATA_PATH = os.path.join("/dcs/large/u2288122/Workspace/location-tensors/data/")
@@ -29,6 +31,8 @@ NUM_FEATURES = 5
 EPOCHS = 10
 TRAIN_BATCH_SIZE = 32
 TEST_BATCH_SIZE = 128
+CAM_LOSS = CategoricalCrossentropy()
+BOX_LOSS = GIoULoss()
 
 # IMAGE-DATA PARAMS
 NUM_CAMS = 15

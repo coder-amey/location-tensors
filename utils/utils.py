@@ -79,6 +79,26 @@ def tensor_decode_one_hot(one_hot_tensor):
     return tensor
 """
 # Tensor-manipulation functions
+def generate_targets(Y, num_cams=NUM_CAMS):
+    """Y(batch_size, t_steps, cams+4)
+        -> t_steps * [Y_cam(batch_size, cams), Y_box(batch_size, 4)]"""
+    targets = []
+    for tensor in tf.split(Y, num_or_size_splits=12, axis=1):
+        tensor = tf.squeeze(tensor, axis=1)
+        targets.append(tensor[:, :num_cams])
+        targets.append(tensor[:, num_cams:])
+    return targets
+
+
+def targets2tensors(targets, num_cams=NUM_CAMS):
+    """t_steps * [Y_cam(batch_size, cams), Y_box(batch_size, 4)]
+        -> Y(batch_size, t_steps, cams+4)"""
+    Y = []
+    for i in range(0, len(targets), 2):
+        Y.append(tf.concat([targets[i], targets[i + 1]], axis=1))
+    return tf.stack(Y, axis=1)
+
+
 def tensor_encode_one_hot(tensor):
     one_hot_tensor = []
     for object in tensor:
