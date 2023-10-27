@@ -8,7 +8,8 @@ import tensorflow_addons as tfa
 from tensorflow import keras
 from keras import Model
 from keras.layers import Dense, Input, Layer, LSTM, LSTMCell, Reshape, RNN
-from tensorflow.keras.metrics import Precision
+from keras.metrics import Precision
+from keras.regularizers import l2
 from keras.utils.vis_utils import plot_model
 
 #Internal imports
@@ -16,11 +17,13 @@ from global_config.global_config import (
 	MODEL_PATH,
 	N_INPUT_TSTEPS, N_OUTPUT_TSTEPS, NUM_CAMS, NUM_FEATURES,
 	EPOCHS, TRAIN_BATCH_SIZE, TEST_BATCH_SIZE,
-	CAM_LOSS, BOX_LOSS)
+	CAM_LOSS, BOX_LOSS, CAM_LOSS_WT, BOX_LOSS_WT)
 
 from loader.loader import load_dataset
 from utils.utils import (
-	tensor_decode_one_hot, generate_targets, targets2tensors)
+	store_pkl, load_pkl,
+	tensor_encode_one_hot, tensor_decode_one_hot,
+	generate_targets, targets2tensors)
 '''
 CAVEAT: Using n + 1 cameras
 '''
@@ -28,19 +31,27 @@ CAVEAT: Using n + 1 cameras
 
 # Retained for compatibility
 def combined_loss_fn(Y, Y_pred, num_cams=NUM_CAMS):
-	cam_loss = tf.keras.losses.CategoricalCrossentropy()    # ~ 2.0
-	box_loss = tfa.losses.GIoULoss()                        # < 2.0
+	cam_loss = tf.keras.losses.CategoricalCrossentropy()	# ~ 2.0
+	box_loss = tfa.losses.GIoULoss()						# < 2.0
 	agg_loss = 4 * cam_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams]) + \
-	    10 * box_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
+		10 * box_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
 	return(agg_loss)
 
 
-def save_model(model, name="lstm_giou.ml", path=MODEL_PATH):
-	model.save(os.path.join(MODEL_PATH, name))
+def save_model(model, logs=None, name="custom_lstm.ml", path=MODEL_PATH):
+	model.save(os.path.join(path, name))
+	if logs is not None:
+		store_pkl(logs, os.path.join(path, name, "logs.pkl"))
 
 
 def load_model(name, path=MODEL_PATH):
-	return tf.keras.models.load_model(os.path.join(MODEL_PATH, name), custom_objects={'combined_loss_fn': combined_loss_fn})
+	model = tf.keras.models.load_model(os.path.join(path, name)) #, custom_objects={'combined_loss_fn': combined_loss_fn}) [for compatibility]
+	try:
+		logs = load_pkl(os.path.join(path, name, "logs.pkl"))
+		return model, logs
+	except:
+		print(f"Could not find model logs.")
+		return model, None
 
 
 def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS, num_features=NUM_FEATURES, num_cams=NUM_CAMS):
@@ -66,7 +77,7 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 		cam_pred = classifier(intermediate_layer)
 		predictions.append(cam_pred)
 
-		regressor = Dense(units=4, activation='linear', name=f"regressor_{block_index}")
+		regressor = Dense(units=4, activation='linear', kernel_regularizer=l2(0.01), name=f"regressor_{block_index}")
 		box_pred = regressor(intermediate_layer)
 		predictions.append(box_pred)
 
@@ -74,12 +85,15 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 
 	# Compile model
 	loss = {}
+	loss_weights = {}
 	for i in range(n_output_tsteps):
 		loss[f"classifier_{i}"] = CAM_LOSS
+		loss_weights[f"classifier_{i}"] = CAM_LOSS_WT
 		loss[f"regressor_{i}"] = BOX_LOSS
+		loss_weights[f"regressor_{i}"] = BOX_LOSS_WT
 
 	model = Model(inputs=input_layer, outputs=predictions)
-	model.compile(optimizer='adam', loss=loss) #, metrics=[Precision()])
+	model.compile(optimizer='adam', loss=loss, loss_weights=loss_weights) #, metrics=[Precision()])
 
 	# Summarize layers
 	print(f"Model compiled successfully.\nModel summary:")
@@ -110,22 +124,30 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 	# Training
 	print("Training the model...")
 	logs = model.fit(X_train, targets_train, batch_size=train_batch_size, epochs=epochs, verbose=2)
+	logs = {'train_log': logs.history, 'parameters': logs.params}
 	print("Model training completed.")
-	# print(logs.history)
 
 	# Evaluation
-	results = model.evaluate(X_test, targets_test, batch_size=test_batch_size)
-	# logs["test_loss"] = results
+	logs["test_log"] = test_model(model, X_test, targets=targets_test, test_batch_size=test_batch_size)
 
-	return model, results, logs
+	return model, logs
 
 
-def predict(model, X_test, Y_test_encoded, debug=False):
-	predictions = model.predict(X_test)
+def test_model(model, X_test, Y_test=None, Y_test_encoded=None, targets=None, test_batch_size=TEST_BATCH_SIZE):
+	assert(1 == sum([1 for param in [Y_test, Y_test_encoded, targets] \
+			if param is not None]), "Pass any one of the three arguments: \
+				Y_test, Y_test_encoded or targets")
+	print("Testing the model...")
+	if targets is None:
+		if Y_test_encoded is None:
+			targets = generate_targets(tensor_encode_one_hot(Y_test))
+		else:
+			targets = generate_targets(Y_test_encoded)
+	results = model.evaluate(X_test, targets, batch_size=test_batch_size)
+	print(f"Results:\n{results}")
+	return results
+
+def predict(model, X):
+	predictions = model.predict(X)
 	y_pred = tensor_decode_one_hot(targets2tensors(predictions))
-	if debug:
-		# print(predictions[:, :, 0:NUM_CAMS])
-		print(y_pred[:, :, 0])
-		print(tensor_decode_one_hot(Y_test_encoded)[:, :, 0])
-		return y_pred.numpy().astype(int), predictions
 	return y_pred.numpy().astype(int)

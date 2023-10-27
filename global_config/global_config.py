@@ -1,5 +1,5 @@
 import os
-from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.losses import CategoricalCrossentropy, MeanSquaredError
 from tensorflow_addons.losses import GIoULoss
 
 # PATHS
@@ -28,11 +28,13 @@ OCCLUSION_THRESHOLD = 6
 RANDOM_SEED = 47
 TRAIN_TEST_SPLIT = 0.25
 NUM_FEATURES = 5
-EPOCHS = 10
-TRAIN_BATCH_SIZE = 32
+EPOCHS = 50
+TRAIN_BATCH_SIZE = 64
 TEST_BATCH_SIZE = 128
 CAM_LOSS = CategoricalCrossentropy()
-BOX_LOSS = GIoULoss()
+BOX_LOSS = GIoULoss()           # GIoULoss() or CategoricalCrossentropy()
+CAM_LOSS_WT = 100        # Needs motivation
+BOX_LOSS_WT = 400        # MSE ~ 500000 -> 0.001; GIOU ~ 2 -> 400
 
 # IMAGE-DATA PARAMS
 NUM_CAMS = 15

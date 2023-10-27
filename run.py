@@ -1,9 +1,24 @@
 gpu_server = False
-parallel_objects = (not gpu_server) and False
+parallel_objects = (not gpu_server) and True
 selected_gpu = "0"
 
-mode = "new"  # new or load
-model_name = "robust_lstm.ml" # "robust_lstm.ml"
+mode = "load"  # new, load or enhance
+model_name = "robust_lstm_mse_gpu.ml" # "robust_lstm.ml"
+
+"""
+CHECKLIST
+=========
+Set the following:
+    gpu_server, mode, model_name    in run.py
+
+    EPOCHS, TRAIN_BATCH_SIZE, TEST_BATCH_SIZE,
+	CAM_LOSS, BOX_LOSS, CAM_LOSS_WT, BOX_LOSS_WT    in global_config
+
+If running on the GPU server, execute `module load cuda11.2`
+
+Run this file
+=========
+"""
 
 # Setup the server environment
 if gpu_server:
@@ -29,19 +44,21 @@ from model import custom_lstm as lstm
 
 if mode == "new":
     # Untrained model
-    model, results, logs = lstm.train_model()
-    # lstm.save_model(model, name=model_name)
-    # print(f"Results:\n{results}")
+    model, logs = lstm.train_model()
+    lstm.save_model(model, logs, name=model_name)
+    print(f"Results:\n{results}")
 
 elif mode == "load":
     # Trained model
-    model = lstm.load_model(name=model_name)
+    model, logs = lstm.load_model(name=model_name)
 
 
 # Partially trained model
-# model = lstm.load_model(name="customized_lstm.ml")
-# model, _, _ = lstm.train_model(model=model)
-# lstm.save_model(model, name="advanced_lstm.ml")
+if mode == "enhance":
+    # Pre-trained model
+    model = lstm.load_model(name=model_name)
+    model, results, logs = lstm.train_model(model=model)
+    lstm.save_model(model, name=f"enhanced_{model_name}")
 
 if not gpu_server:
     # Generate predictions
