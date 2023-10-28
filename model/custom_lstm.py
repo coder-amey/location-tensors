@@ -123,7 +123,8 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 
 	# Training
 	print("Training the model...")
-	logs = model.fit(X_train, targets_train, batch_size=train_batch_size, epochs=epochs, verbose=2)
+	tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=os.path.join(MODEL_PATH, "debug"), histogram_freq=1)
+	logs = model.fit(X_train, targets_train, batch_size=train_batch_size, epochs=epochs, verbose=2, callbacks=[tensorboard_callback])
 	logs = {'train_log': logs.history, 'parameters': logs.params}
 	print("Model training completed.")
 

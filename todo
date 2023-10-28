@@ -1,9 +1,11 @@
 To-do:
-Train models for 100 epochs
 Design code for retrieving metrics
 
+model -> predict -> stack(targets, preds)   -> get pr_scores
+                                            -> get siou_scores
 
 Obtain metrics:
     [AP(which, where), PR(which, where), SIOU]
 
 THESIS!!!!
+

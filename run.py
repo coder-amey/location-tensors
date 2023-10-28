@@ -1,8 +1,8 @@
-gpu_server = True
-parallel_objects = (not gpu_server) and True
+gpu_server = False
+parallel_objects = (not gpu_server) and False
 selected_gpu = "0"
 
-mode = "new"  # new, load or enhance
+mode = "load"  # new, load or enhance
 model_name = "robust_lstm_giou_ep100.ml" # "robust_lstm.ml"
 
 """
@@ -82,13 +82,15 @@ if not gpu_server:
     plt.ylabel('Loss')
     plt.show()
 
-    plt.plot([logs['train_log'][key] for key in cam_losses])
+    for key in cam_losses:
+        plt.plot(logs['train_log'][key])
     plt.title(f'Classification Loss')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.show()
 
-    plt.plot([logs['train_log'][key] for key in box_losses])
+    for key in box_losses:
+        plt.plot(logs['train_log'][key])
     plt.title(f'Regression Loss')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
@@ -118,10 +120,10 @@ if not gpu_server:
         x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, save_to_file=False)
         y_encoded = tensor_encode_one_hot(y)
         print(f"I/O shapes: ({x.shape}), ({y_encoded.shape})")
-        y_pred, y_pred_encoded = lstm.predict(model, x)
+        y_pred = lstm.predict(model, x)
 
         # Plot predictions
-        print(f"Output details: {y_pred_encoded.shape} -> {y_pred.shape} -> {len(tensor2trajectory(y_pred))}")
+        print(f"Output details: {y_pred.shape} -> {len(tensor2trajectory(y_pred))}")
         print(f"Ground truth details: {y_encoded.shape} -> {y.shape} -> {len(tensor2trajectory(y))}")
         project_trajectories([tensor2trajectory(y), tensor2trajectory(y_pred)])
         
