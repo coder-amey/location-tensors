@@ -7,7 +7,7 @@ from tensorflow_addons.losses import GIoULoss
 
 from tensorflow import keras
 from keras import Model
-from keras.layers import Dense, Input, Layer, LSTM, LSTMCell, Reshape, RNN
+from keras.layers import Concatenate, Dense, Input, Lambda, LSTM, LSTMCell, Reshape, RNN
 from keras.losses import MeanSquaredError, MeanAbsoluteError
 from keras.metrics import Precision, Recall
 from keras.regularizers import l2
@@ -78,6 +78,7 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 	# Encoder LSTM
 	encoder_lstm = LSTM(units=num_features, return_state=True)
 	encoder_layer, h, c = encoder_lstm(input_layer)
+	last_pos = Lambda(lambda x: x[:, -1, 1:])(input_layer)
 	x = Reshape((1, num_features))(encoder_layer) # [!] VERY IMPORTANT TO INCLUDE A TIME-STEP
 	# Decoder LSTM
 	for block_index in range(n_output_tsteps):
@@ -91,10 +92,12 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 		predictions.append(cam_pred)
 
 		regressor = Dense(units=4, activation='linear', kernel_regularizer=l2(0.01), name=f"regressor_{block_index}")
-		box_pred = regressor(intermediate_layer)
+		context_layer = Concatenate(axis=-1)([last_pos, intermediate_layer])
+		box_pred = regressor(context_layer)
 		predictions.append(box_pred)
 
 		x = Reshape((1, num_features))(y) # [!] VERY IMPORTANT TO INCLUDE A TIME-STEP
+		last_pos = box_pred
 
 	# Compile model
 	loss = {}
