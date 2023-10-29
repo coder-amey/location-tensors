@@ -1,0 +1,12 @@
+tensors_4_in_12_out_dataset.pkl:
+Average Precision:
+	Camera:	0.7937443256378174
+	Boxes:	0.1573137789964676
+SIoU score:	0.0
+
+demo_dataset.pkl:
+Average Precision:
+	Camera:	0.8044259548187256
+	Boxes:	0.16633020341396332
+SIoU score:	0.0
+

@@ -57,28 +57,6 @@ def load_pkl(input_file):
 
 
 # Tensor-manipulation functions
-"""
-def tensor_encode_one_hot(tensor):
-    one_hot_tensor = np.vstack([    \
-        np.expand_dims( \
-            np.hstack([ \
-                tf.one_hot(example[:, 0], depth=NUM_CAMS), example[:, 1:]] \
-            ), axis=0)
-                for example in tensor])
-    return one_hot_tensor
-
-
-def tensor_decode_one_hot(one_hot_tensor):
-    tensor = np.vstack([    \
-        np.expand_dims( \
-            np.hstack([ \
-                np.expand_dims(np.argmax(example[:, 0:NUM_CAMS], axis=1), axis=1)   \
-                , example[:, NUM_CAMS:]] \
-            ), axis=0)
-                for example in one_hot_tensor])
-    return tensor
-"""
-# Tensor-manipulation functions
 def generate_targets(Y, num_cams=NUM_CAMS):
     """Y(batch_size, t_steps, cams+4)
         -> t_steps * [Y_cam(batch_size, cams), Y_box(batch_size, 4)]"""
@@ -137,6 +115,17 @@ def decode_2d_one_hot(one_hot_tensor):
 
 
 # Additional utilities
+def get_partition(x1, y1, x2, y2, part_width=384, part_height=240):
+    """
+        Divide the (1920x1200) image into a grid of 25 rectangles of (384x240).
+        Return an integer representing the rectangle to which the box belongs.
+    """
+    x = (x1 + x2) / 2
+    y = (y1 + y2) / 2
+    part_num = str(int(x // part_width)) + str(int(y // part_height))
+    return int(part_num, 5) #5 comes from the grid comprising of (5x5) unique cells
+
+
 def is_consecutive(list):
     i = list[0]
     for j in list[1::]:
@@ -145,3 +134,48 @@ def is_consecutive(list):
         i = j
     return True
 
+
+def validate_box(box):
+    x1, y1, x2, y2 = box
+    if x1 < x2 and y1 < y2:
+        return True
+    else:
+        return False
+
+
+def area(box):
+    return (box[2] - box[0]) * (box[3] - box[1])
+
+
+# Metrics
+def calculate_SIoU(box1, box2):
+    # Determine the coordinates of the intersection rectangle
+    x1 = max(box1[0], box2[0])  # Left-most x-coordinate of the intersection
+    y1 = min(box1[1], box2[1])  # Top-most y-coordinate of the intersection
+    x2 = min(box1[2], box2[2])  # Right-most x-coordinate of the intersection
+    y2 = max(box1[3], box2[3])  # Bottom-most y-coordinate of the intersection
+
+    # Check if there's a valid intersection
+    if validate_box([x1, y1, x2, y2]):
+        intersection = area([x1, y1, x2, y2])
+    else:
+        return 0
+
+    return intersection / (area(box1) + area(box2) - intersection)
+
+
+def SIoU(y_true, y_pred):
+    """
+    Inputs: y_true, y_pred of shape (num_samples, num_features)
+    Outputs: score (floating value)
+    """
+    scores = []
+    for truth, pred in zip(y_true, y_pred):
+        k_true, k_pred = truth[0], pred[0]
+        box_true = truth[1:]
+        box_pred = pred[1:]
+        if (k_true == k_pred) and validate_box(box_true) and validate_box(box_pred):
+            scores.append(calculate_SIoU(box_true, box_pred))
+        else:
+            scores.append(0)
+    return np.array(scores).mean()

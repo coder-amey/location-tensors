@@ -8,12 +8,13 @@ import tensorflow_addons as tfa
 from tensorflow import keras
 from keras import Model
 from keras.layers import Dense, Input, Layer, LSTM, LSTMCell, Reshape, RNN
-from keras.metrics import Precision
+from keras.metrics import Precision, Recall
 from keras.regularizers import l2
 from keras.utils.vis_utils import plot_model
 
 #Internal imports
 from global_config.global_config import (
+	ORIGINAL_IMAGE_HEIGHT, ORIGINAL_IMAGE_WIDTH,
 	MODEL_PATH,
 	N_INPUT_TSTEPS, N_OUTPUT_TSTEPS, NUM_CAMS, NUM_FEATURES,
 	EPOCHS, TRAIN_BATCH_SIZE, TEST_BATCH_SIZE,
@@ -21,9 +22,9 @@ from global_config.global_config import (
 
 from loader.loader import load_dataset
 from utils.utils import (
-	store_pkl, load_pkl,
+	SIoU, store_pkl, load_pkl,
 	tensor_encode_one_hot, tensor_decode_one_hot,
-	generate_targets, targets2tensors)
+	get_partition, generate_targets, targets2tensors)
 '''
 CAVEAT: Using n + 1 cameras
 '''
@@ -123,7 +124,7 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 
 	# Training
 	print("Training the model...")
-	tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=os.path.join(MODEL_PATH, "debug"), histogram_freq=1)
+	tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=os.path.join(MODEL_PATH, "debug_mse"), histogram_freq=1)
 	logs = model.fit(X_train, targets_train, batch_size=train_batch_size, epochs=epochs, verbose=2, callbacks=[tensorboard_callback])
 	logs = {'train_log': logs.history, 'parameters': logs.params}
 	print("Model training completed.")
@@ -149,7 +150,79 @@ def test_model(model, X_test, Y_test=None, Y_test_encoded=None, targets=None, te
 	print(f"Results:\n{results}")
 	return results
 
-def predict(model, X):
+def predict(model, X, probabilities=False):
+	print("Generating predictions...")
 	predictions = model.predict(X)
-	y_pred = tensor_decode_one_hot(targets2tensors(predictions))
-	return y_pred.numpy().astype(int)
+	y_pred = targets2tensors(predictions)
+	if probabilities:
+		return y_pred.numpy()
+	else:
+	    return tensor_decode_one_hot(y_pred).numpy().astype(int)
+
+def calculate_metrics(model, X, Y, num_cams=NUM_CAMS, num_features=NUM_FEATURES):
+	Y_pred_encoded = predict(model, X, probabilities=True)
+
+	# Ensure that we are working with numpy arrays
+	num_samples = Y.shape[0] * Y.shape[1]
+	Y_pred = tensor_decode_one_hot(Y_pred_encoded)
+	Y, Y_pred, Y_pred_encoded = np.array(Y), np.array(Y_pred), np.array(Y_pred_encoded)
+
+
+	# Modify the output tensors for generating metrics
+	cams_true = tf.one_hot(Y[:, :, 0].flatten(), depth=num_cams)
+	cams_pred = Y_pred_encoded[:, :, :num_cams].reshape(num_samples, num_cams)
+
+	parts_true = Y[:, :, 1:].reshape(num_samples, 4)
+	parts_pred = Y_pred_encoded[:, :, num_cams:].reshape(num_samples, 4)
+	# Clip the prediction co-ordinates
+	for i in [0, 2]:
+		parts_pred[:, i] = np.clip(parts_pred[:, i], 0, ORIGINAL_IMAGE_WIDTH - 1)
+		parts_true[:, i] = np.clip(parts_true[:, i], 0, ORIGINAL_IMAGE_WIDTH - 1)
+	for i in [1, 3]:
+		parts_pred[:, i] = np.clip(parts_pred[:, i], 0, ORIGINAL_IMAGE_HEIGHT - 1)
+		parts_true[:, i] = np.clip(parts_true[:, i], 0, ORIGINAL_IMAGE_HEIGHT - 1)
+	parts_true = tf.one_hot(np.apply_along_axis( \
+		lambda box_coords: get_partition(*box_coords), axis=1, arr=parts_true), \
+			depth=25)
+	parts_pred = tf.one_hot(np.apply_along_axis( \
+		lambda box_coords: get_partition(*box_coords), axis=1, arr=parts_pred), \
+		    depth=25)
+
+	# Get the metrics
+	siou_score = SIoU(Y.reshape(num_samples, num_features), \
+					Y_pred.reshape(num_samples, num_features))
+
+	avg_precision = Precision()
+
+	avg_precision.update_state(cams_true, cams_pred)
+	AP_cams = avg_precision.result()
+	avg_precision.reset_state()
+
+	avg_precision.update_state(parts_true, parts_pred)
+	AP_parts = avg_precision.result()
+	avg_precision.reset_state()
+
+	# Obtain PR-curve stats
+	thresholds=np.linspace(0.01, 0.99, 100).tolist()
+	avg_precision = Precision(thresholds=thresholds)
+	avg_recall = Recall(thresholds=thresholds)
+
+	PR_cams = {}
+	avg_precision.update_state(cams_true, cams_pred)
+	PR_cams["precision"] = avg_precision.result()
+	avg_precision.reset_state()
+
+	avg_recall.update_state(cams_true, cams_pred)
+	PR_cams["recall"] = avg_recall.result()
+	avg_recall.reset_state()
+
+	PR_parts = {}
+	avg_precision.update_state(parts_true, parts_pred)
+	PR_parts["precision"] = avg_precision.result()
+	avg_precision.reset_state()
+
+	avg_recall.update_state(parts_true, parts_pred)
+	PR_parts["recall"] = avg_recall.result()
+	avg_recall.reset_state()
+
+	return AP_cams, AP_parts, siou_score, PR_cams, PR_parts

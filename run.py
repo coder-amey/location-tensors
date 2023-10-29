@@ -3,7 +3,7 @@ parallel_objects = (not gpu_server) and False
 selected_gpu = "0"
 
 mode = "load"  # new, load or enhance
-model_name = "robust_lstm_giou_ep100.ml" # "robust_lstm.ml"
+model_name = "robust_lstm_giou_ep200.ml" # "robust_lstm.ml"
 
 """
 CHECKLIST
@@ -55,9 +55,11 @@ elif mode == "load":
 # Partially trained model
 if mode == "enhance":
     # Pre-trained model
-    model = lstm.load_model(name=model_name)
-    model, results, logs = lstm.train_model(model=model)
-    lstm.save_model(model, name=f"enhanced_{model_name}")
+    model, logs = lstm.load_model(name=model_name)
+    model, new_logs = lstm.train_model(model)
+    new_logs["train_log"] = {key: logs["train_log"][key] + new_logs["train_log"][key] for key in logs["train_log"].keys()}
+    lstm.save_model(model, new_logs, name=f"enhanced_{model_name}")
+
 
 if not gpu_server:
     # Generate predictions

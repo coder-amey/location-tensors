@@ -1,11 +1,7 @@
 To-do:
-Design code for retrieving metrics
-
-model -> predict -> stack(targets, preds)   -> get pr_scores
-                                            -> get siou_scores
-
-Obtain metrics:
-    [AP(which, where), PR(which, where), SIOU]
-
+Start with the scores you have
+Write the paper
+Run combined loss model
+Update scores
 THESIS!!!!
 
