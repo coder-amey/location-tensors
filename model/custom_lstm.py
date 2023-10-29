@@ -3,12 +3,12 @@ import numpy as np
 import os
 import pickle
 import tensorflow as tf
-import tensorflow_addons as tfa
+from tensorflow_addons.losses import GIoULoss
 
 from tensorflow import keras
 from keras import Model
 from keras.layers import Dense, Input, Layer, LSTM, LSTMCell, Reshape, RNN
-from keras.losses import MeanSquaredError
+from keras.losses import MeanSquaredError, MeanAbsoluteError
 from keras.metrics import Precision, Recall
 from keras.regularizers import l2
 from keras.utils.vis_utils import plot_model
@@ -32,17 +32,19 @@ CAVEAT: Using n + 1 cameras
 
 
 def custom_regression_loss(box_true, box_pred):
-	box_loss = BOX_LOSS_WT * BOX_LOSS(box_true, box_pred)
-	size_loss = 0.001 * MeanSquaredError()(
-		    (box_true[:, 2] - box_true[:, 0]) * (box_true[:, 3] - box_true[:, 1]),
+	box_loss = 0.001 * MeanSquaredError()(box_true, box_pred)
+	giou_loss = 400 * GIoULoss()(box_true, box_pred)
+	diag_loss = 0.1 * MeanAbsoluteError()(
+		    tf.square(box_true[:, 2] - box_true[:, 0]) + tf.square(box_true[:, 3] - box_true[:, 1]),
 			(box_pred[:, 2] - box_pred[:, 0]) * (box_pred[:, 3] - box_pred[:, 1]))
-	return box_loss + size_loss
+
+	return box_loss + giou_loss + diag_loss
 
 
 # Retained for compatibility
 def combined_loss_fn(Y, Y_pred, num_cams=NUM_CAMS):
 	cam_loss = tf.keras.losses.CategoricalCrossentropy()	# ~ 2.0
-	box_loss = tfa.losses.GIoULoss()						# < 2.0
+	box_loss = GIoULoss()						# < 2.0
 	agg_loss = 4 * cam_loss(Y[:, :, 0: num_cams], Y_pred[:, :, 0: num_cams]) + \
 		10 * box_loss(Y[:, :, num_cams:], Y_pred[:, :, num_cams:])
 	return(agg_loss)
@@ -55,7 +57,8 @@ def save_model(model, logs=None, name="custom_lstm.ml", path=MODEL_PATH):
 
 
 def load_model(name, path=MODEL_PATH):
-	model = tf.keras.models.load_model(os.path.join(path, name)) #, custom_objects={'combined_loss_fn': combined_loss_fn}) [for compatibility]
+	model = tf.keras.models.load_model(os.path.join(path, name), \
+			custom_objects={'custom_regression_loss': custom_regression_loss}) # combined_loss_fn': combined_loss_fn}) [for compatibility]
 	try:
 		logs = load_pkl(os.path.join(path, name, "logs.pkl"))
 		return model, logs
