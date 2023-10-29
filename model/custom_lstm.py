@@ -34,8 +34,8 @@ CAVEAT: Using n + 1 cameras
 def custom_regression_loss(box_true, box_pred):
 	box_loss = BOX_LOSS_WT * BOX_LOSS(box_true, box_pred)
 	size_loss = 0.01 * MeanSquaredError()(
-		    (box_true[2] - box_true[0]) * (box_true[3] - box_true[1]),
-			(box_pred[2] - box_pred[0]) * (box_pred[3] - box_pred[1]))
+		    (box_true[:, 2] - box_true[:, 0]) * (box_true[:, 3] - box_true[:, 1]),
+			(box_pred[:, 2] - box_pred[:, 0]) * (box_pred[:, 3] - box_pred[:, 1]))
 	return box_loss + size_loss
 
 
@@ -99,8 +99,8 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 	for i in range(n_output_tsteps):
 		loss[f"classifier_{i}"] = CAM_LOSS
 		loss_weights[f"classifier_{i}"] = CAM_LOSS_WT
-		loss[f"regressor_{i}"] = BOX_LOSS
-		loss_weights[f"regressor_{i}"] = BOX_LOSS_WT
+		loss[f"regressor_{i}"] = custom_regression_loss
+		loss_weights[f"regressor_{i}"] = 1
 
 	model = Model(inputs=input_layer, outputs=predictions)
 	model.compile(optimizer='adam', loss=loss, loss_weights=loss_weights) #, metrics=[Precision()])
