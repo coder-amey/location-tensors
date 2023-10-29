@@ -8,6 +8,7 @@ import tensorflow_addons as tfa
 from tensorflow import keras
 from keras import Model
 from keras.layers import Dense, Input, Layer, LSTM, LSTMCell, Reshape, RNN
+from keras.losses import MeanSquaredError
 from keras.metrics import Precision, Recall
 from keras.regularizers import l2
 from keras.utils.vis_utils import plot_model
@@ -28,6 +29,14 @@ from utils.utils import (
 '''
 CAVEAT: Using n + 1 cameras
 '''
+
+
+def custom_regression_loss(box_true, box_pred):
+	box_loss = BOX_LOSS_WT * BOX_LOSS(box_true, box_pred)
+	size_loss = 0.01 * MeanSquaredError()(
+		    (box_true[2] - box_true[0]) * (box_true[3] - box_true[1]),
+			(box_pred[2] - box_pred[0]) * (box_pred[3] - box_pred[1]))
+	return box_loss + size_loss
 
 
 # Retained for compatibility
