@@ -33,7 +33,7 @@ CAVEAT: Using n + 1 cameras
 
 def custom_regression_loss(box_true, box_pred):
 	box_loss = BOX_LOSS_WT * BOX_LOSS(box_true, box_pred)
-	size_loss = 0.01 * MeanSquaredError()(
+	size_loss = 0.001 * MeanSquaredError()(
 		    (box_true[:, 2] - box_true[:, 0]) * (box_true[:, 3] - box_true[:, 1]),
 			(box_pred[:, 2] - box_pred[:, 0]) * (box_pred[:, 3] - box_pred[:, 1]))
 	return box_loss + size_loss
@@ -133,8 +133,10 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 
 	# Training
 	print("Training the model...")
-	tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=os.path.join(MODEL_PATH, "debug_mse"), histogram_freq=1)
-	logs = model.fit(X_train, targets_train, batch_size=train_batch_size, epochs=epochs, verbose=2, callbacks=[tensorboard_callback])
+	# Uncomment the tensorboard call-back if you want diagnostics
+	# tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=os.path.join(MODEL_PATH, "debug_mse"), histogram_freq=1)
+	logs = model.fit(X_train, targets_train, batch_size=train_batch_size, epochs=epochs, verbose=2) #\
+    #       , callbacks=[tensorboard_callback])
 	logs = {'train_log': logs.history, 'parameters': logs.params}
 	print("Model training completed.")
 
