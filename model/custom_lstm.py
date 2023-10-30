@@ -126,7 +126,7 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 	return model
 
 
-def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_BATCH_SIZE, test_batch_size=TEST_BATCH_SIZE, num_cams=NUM_CAMS):
+def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_BATCH_SIZE, test_batch_size=TEST_BATCH_SIZE, num_cams=NUM_CAMS, n_output_tsteps=N_OUTPUT_TSTEPS):
 	# Load the dataset
 	if dataset is None:
 		X_train, Y_train, Y_train_encoded, X_test, Y_test, Y_test_encoded = load_dataset()
