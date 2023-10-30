@@ -64,19 +64,16 @@ def generate_targets(Y, num_cams=NUM_CAMS):
     for tensor in tf.split(Y, num_or_size_splits=12, axis=1):
         tensor = tf.squeeze(tensor, axis=1)
         targets.append(tensor[:, :num_cams])
-        targets.append(tensor[:, num_cams:])
+        targets.append(to_center_point_format(tensor[:, num_cams:]))
     return targets
 
 
-def targets2tensors(targets, num_cams=NUM_CAMS, reformat_targets=True):
+def targets2tensors(targets):
     """t_steps * [Y_cam(batch_size, cams), Y_box(batch_size, 4)]
         -> Y(batch_size, t_steps, cams+4)"""
     Y = []
     for i in range(0, len(targets), 2):
-        if reformat_targets:
-            Y.append(tf.concat([targets[i], to_two_point_format(targets[i + 1])], axis=1))
-        else:
-            Y.append(tf.concat([targets[i], targets[i + 1]], axis=1))
+        Y.append(tf.concat([targets[i], to_two_point_format(targets[i + 1])], axis=1))
     return tf.stack(Y, axis=1)
 
 
