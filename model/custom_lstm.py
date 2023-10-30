@@ -33,8 +33,8 @@ CAVEAT: Using n + 1 cameras
 
 
 def custom_regression_loss(box_true, box_pred):
-	box_loss = 0.01 * MeanSquaredError()(box_true, box_pred)
-	diag_loss = 0.01 * MeanAbsoluteError()(
+	box_loss = 0.0001 * MeanSquaredError()(box_true, box_pred)
+	diag_loss = 0.0001 * MeanAbsoluteError()(
 		    tf.square(box_true[:, 2]) + tf.square(box_true[:, 3]),
 			tf.square(box_pred[:, 2]) + tf.square(box_pred[:, 3]))
 
@@ -139,8 +139,17 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 	print("Targets loaded successfully")
 
 	# Load the model
-	if model is None:
+	if model is None:			# Build a new model
 		model = define_model()
+	else:						# Recompile the model
+		loss = {}
+		loss_weights = {}
+		for i in range(n_output_tsteps):
+			loss[f"classifier_{i}"] = CAM_LOSS
+			loss_weights[f"classifier_{i}"] = CAM_LOSS_WT
+			loss[f"regressor_{i}"] = custom_regression_loss
+			loss_weights[f"regressor_{i}"] = 1
+		model.compile(optimizer='adam', loss=loss, loss_weights=loss_weights)
 
 	# Training
 	print("Training the model...")
