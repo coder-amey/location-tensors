@@ -142,8 +142,17 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 	print("Targets loaded successfully")
 
 	# Load the model
-	if model is None:
+	if model is None:			# Build a new model
 		model = define_model()
+	else:						# Recompile the model
+		loss = {}
+		loss_weights = {}
+		for i in range(n_output_tsteps):
+			loss[f"classifier_{i}"] = CAM_LOSS
+			loss_weights[f"classifier_{i}"] = CAM_LOSS_WT
+			loss[f"regressor_{i}"] = custom_regression_loss
+			loss_weights[f"regressor_{i}"] = 1
+		model.compile(optimizer='adam', loss=loss, loss_weights=loss_weights)
 
 	# Training
 	print("Training the model...")

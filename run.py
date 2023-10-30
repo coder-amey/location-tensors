@@ -11,10 +11,10 @@ model_name = "mse_giou_diag_const_context_50ep.ml"
 CHECKLIST
 =========
 Set the following:
-    gpu_server, mode, model_name    in run.py
+    gpu_server, mode, model_name                in run.py
 
     EPOCHS, TRAIN_BATCH_SIZE, TEST_BATCH_SIZE,
-	CAM_LOSS, BOX_LOSS, CAM_LOSS_WT, BOX_LOSS_WT    in global_config
+	CAM_LOSS, CAM_LOSS_WT                       in global_config
 
 If running on the GPU server, execute `module load cuda11.2`
 
