@@ -149,7 +149,7 @@ def train_model(model=None, dataset=None, epochs=EPOCHS, train_batch_size=TRAIN_
 		loss_weights = {}
 		for i in range(n_output_tsteps):
 			loss[f"classifier_{i}"] = CAM_LOSS
-			loss_weights[f"classifier_{i}"] = CAM_LOSS_WT
+			loss_weights[f"classifier_{i}"] = CAM_LOSS_WT * (0.945 ** i)	# Decaying weights
 			loss[f"regressor_{i}"] = custom_regression_loss
 			loss_weights[f"regressor_{i}"] = 1
 		model.compile(optimizer='adam', loss=loss, loss_weights=loss_weights)

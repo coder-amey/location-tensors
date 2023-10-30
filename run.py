@@ -1,9 +1,9 @@
-gpu_server = True
+gpu_server = False
 parallel_objects = (not gpu_server) and True
-selected_gpu = "2"
+selected_gpu = "0"
 
-mode = "enhance"  # new, load or enhance
-model_name = "mse_giou_diag_const_context_50ep.ml"
+mode = "load"  # new, load or enhance
+model_name = "enhanced_mse_giou_diag_const_context_50ep.ml"
 # mse_giou_diag_const_context_50ep.ml
 # mse_giou_diag_var_context_50ep.ml
 
