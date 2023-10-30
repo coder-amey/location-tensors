@@ -114,6 +114,25 @@ def decode_2d_one_hot(one_hot_tensor):
     return tf.concat([cam_tensor, pos_tensor], axis=1)
 
 
+def to_center_point_format(bbox):
+    # Convert from (x1, y1, x2, y2) to (mid_x, mid_y, width, height)
+    x1, y1, x2, y2 = tf.unstack(bbox, axis=-1)
+    mid_x = (x1 + x2) / 2
+    mid_y = (y1 + y2) / 2
+    width = x2 - x1
+    height = y2 - y1
+    return tf.cast(tf.stack([mid_x, mid_y, width, height], axis=-1), dtype=tf.int32)
+
+def to_two_point_format(bbox):
+    # Convert from (mid_x, mid_y, width, height) to (x1, y1, x2, y2)
+    mid_x, mid_y, width, height = tf.unstack(bbox, axis=-1)
+    x1 = mid_x - width / 2
+    y1 = mid_y - height / 2
+    x2 = mid_x + width / 2
+    y2 = mid_y + height / 2
+    return tf.cast(tf.stack([x1, y1, x2, y2], axis=-1), dtype=tf.int32)
+
+
 # Additional utilities
 def get_partition(x1, y1, x2, y2, part_width=384, part_height=240):
     """

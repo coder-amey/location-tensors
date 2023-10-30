@@ -23,8 +23,9 @@ from global_config.global_config import (
 
 from loader.loader import load_dataset
 from utils.utils import (
-	SIoU, store_pkl, load_pkl,
-	tensor_encode_one_hot, tensor_decode_one_hot,
+	SIoU,
+	store_pkl, load_pkl,
+	tensor_encode_one_hot, tensor_decode_one_hot, to_center_point_format, to_two_point_format,
 	get_partition, generate_targets, targets2tensors)
 '''
 CAVEAT: Using n + 1 cameras
@@ -32,9 +33,10 @@ CAVEAT: Using n + 1 cameras
 
 
 def custom_regression_loss(box_true, box_pred):
+	box_pred = to_two_point_format(box_pred)	# Convert the predicted box into two-point format
 	box_loss = 0.001 * MeanSquaredError()(box_true, box_pred)
 	giou_loss = 400 * GIoULoss()(box_true, box_pred)
-	diag_loss = 0.1 * MeanAbsoluteError()(
+	diag_loss = 0.001 * MeanAbsoluteError()(
 		    tf.square(box_true[:, 2] - box_true[:, 0]) + tf.square(box_true[:, 3] - box_true[:, 1]),
 			(box_pred[:, 2] - box_pred[:, 0]) * (box_pred[:, 3] - box_pred[:, 1]))
 
@@ -69,35 +71,40 @@ def load_model(name, path=MODEL_PATH):
 
 def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS, num_features=NUM_FEATURES, num_cams=NUM_CAMS):
 	"""Define the model architecture"""
-	#TO-DO: try adding a common dense layer; vary the lstm output shape;
-	predictions = []
 
-	# Main network
 	print("Building model...")
+	predictions = []
 	input_layer = Input(shape=(n_input_tsteps, num_features))
+	# Prepare the context for the regressor in center-point format
+	last_pos = Lambda(lambda x: to_center_point_format(x[:, -1, 1:]))(input_layer)
+
 	# Encoder LSTM
 	encoder_lstm = LSTM(units=num_features, return_state=True)
 	encoder_layer, h, c = encoder_lstm(input_layer)
-	last_pos = Lambda(lambda x: x[:, -1, 1:])(input_layer)
 	x = Reshape((1, num_features))(encoder_layer) # [!] VERY IMPORTANT TO INCLUDE A TIME-STEP
+
 	# Decoder LSTM
 	for block_index in range(n_output_tsteps):
 		y, h, c = RNN(LSTMCell(units=num_features), \
 					  return_state=True)(x, initial_state=[h, c])
+		intermediate_layer = Dense(units=num_features, activation='sigmoid')(y)
 
 		# Prediction module
-		intermediate_layer = Dense(units=num_features, activation='sigmoid')(y)
 		classifier = Dense(units=num_cams, activation='softmax', name=f"classifier_{block_index}")
 		cam_pred = classifier(intermediate_layer)
-		predictions.append(cam_pred)
 
 		regressor = Dense(units=4, activation='linear', kernel_regularizer=l2(0.01), name=f"regressor_{block_index}")
 		context_layer = Concatenate(axis=-1)([last_pos, intermediate_layer])
 		box_pred = regressor(context_layer)
-		predictions.append(box_pred)
 
+		# Derive variables for the next timestep
 		x = Reshape((1, num_features))(y) # [!] VERY IMPORTANT TO INCLUDE A TIME-STEP
 		last_pos = box_pred
+
+		# Convert the predicted box into two-point format
+		formatted_box_pred = Lambda(lambda x: to_two_point_format(x))(box_pred)
+		predictions.append(cam_pred)
+		predictions.append(formatted_box_pred)
 
 	# Compile model
 	loss = {}
