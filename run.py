@@ -1,9 +1,9 @@
-gpu_server = False
+gpu_server = True
 parallel_objects = (not gpu_server) and False
 selected_gpu = "0"
 
-mode = "load"  # new, load or enhance
-model_name = "robust_lstm_giou_ep200.ml" # "robust_lstm.ml"
+mode = "new"  # new, load or enhance
+model_name = "mse_giou_diag_var_context_test.ml" # "robust_lstm.ml"
 
 """
 CHECKLIST

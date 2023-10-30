@@ -33,12 +33,11 @@ CAVEAT: Using n + 1 cameras
 
 
 def custom_regression_loss(box_true, box_pred):
-	box_pred = to_two_point_format(box_pred)	# Convert the predicted box into two-point format
 	box_loss = 0.001 * MeanSquaredError()(box_true, box_pred)
 	giou_loss = 400 * GIoULoss()(box_true, box_pred)
 	diag_loss = 0.001 * MeanAbsoluteError()(
 		    tf.square(box_true[:, 2] - box_true[:, 0]) + tf.square(box_true[:, 3] - box_true[:, 1]),
-			(box_pred[:, 2] - box_pred[:, 0]) * (box_pred[:, 3] - box_pred[:, 1]))
+			tf.square(box_pred[:, 2] - box_pred[:, 0]) + tf.square(box_pred[:, 3] - box_pred[:, 1]))
 
 	return box_loss + giou_loss + diag_loss
 
