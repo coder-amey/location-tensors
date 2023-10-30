@@ -203,25 +203,41 @@ def calculate_metrics(model, X, Y, num_cams=NUM_CAMS, num_features=NUM_FEATURES)
 	cams_true = tf.one_hot(Y[:, :, 0].flatten(), depth=num_cams)
 	cams_pred = Y_pred_encoded[:, :, :num_cams].reshape(num_samples, num_cams)
 
-	parts_true = Y[:, :, 1:].reshape(num_samples, 4)
-	parts_pred = Y_pred_encoded[:, :, num_cams:].reshape(num_samples, 4)
+	boxes_true = Y[:, :, 1:].reshape(num_samples, 4)
+	boxes_pred = Y_pred_encoded[:, :, num_cams:].reshape(num_samples, 4)
 	# Clip the prediction co-ordinates
 	for i in [0, 2]:
-		parts_pred[:, i] = np.clip(parts_pred[:, i], 0, ORIGINAL_IMAGE_WIDTH - 1)
-		parts_true[:, i] = np.clip(parts_true[:, i], 0, ORIGINAL_IMAGE_WIDTH - 1)
+		boxes_pred[:, i] = np.clip(boxes_pred[:, i], 0, ORIGINAL_IMAGE_WIDTH - 1)
+		boxes_true[:, i] = np.clip(boxes_true[:, i], 0, ORIGINAL_IMAGE_WIDTH - 1)
 	for i in [1, 3]:
-		parts_pred[:, i] = np.clip(parts_pred[:, i], 0, ORIGINAL_IMAGE_HEIGHT - 1)
-		parts_true[:, i] = np.clip(parts_true[:, i], 0, ORIGINAL_IMAGE_HEIGHT - 1)
+		boxes_pred[:, i] = np.clip(boxes_pred[:, i], 0, ORIGINAL_IMAGE_HEIGHT - 1)
+		boxes_true[:, i] = np.clip(boxes_true[:, i], 0, ORIGINAL_IMAGE_HEIGHT - 1)
 	parts_true = tf.one_hot(np.apply_along_axis( \
-		lambda box_coords: get_partition(*box_coords), axis=1, arr=parts_true), \
+		lambda box_coords: get_partition(*box_coords), axis=1, arr=boxes_true), \
 			depth=25)
 	parts_pred = tf.one_hot(np.apply_along_axis( \
-		lambda box_coords: get_partition(*box_coords), axis=1, arr=parts_pred), \
+		lambda box_coords: get_partition(*box_coords), axis=1, arr=boxes_pred), \
 		    depth=25)
 
 	# Get the metrics
 	siou_score = SIoU(Y.reshape(num_samples, num_features), \
 					Y_pred.reshape(num_samples, num_features))
+
+	mid_p_true = tf.cast(tf.cast(
+		tf.stack([
+				(boxes_true[:, 0] + boxes_true[:, 2]) / 2,
+				(boxes_true[:, 1] + boxes_true[:, 3]) / 2,
+			], axis=-1), \
+			dtype=tf.int32), dtype=tf.float32)
+
+	mid_p_pred = tf.cast(tf.cast(
+		tf.stack([
+				(boxes_pred[:, 0] + boxes_pred[:, 2]) / 2,
+				(boxes_pred[:, 1] + boxes_pred[:, 3]) / 2,
+			], axis=-1), \
+			dtype=tf.int32), dtype=tf.float32)
+
+	ade = np.mean(tf.norm((mid_p_true - mid_p_pred), axis=-1).numpy())
 
 	avg_precision = Precision()
 
@@ -256,4 +272,4 @@ def calculate_metrics(model, X, Y, num_cams=NUM_CAMS, num_features=NUM_FEATURES)
 	PR_parts["recall"] = avg_recall.result()
 	avg_recall.reset_state()
 
-	return AP_cams, AP_parts, siou_score, PR_cams, PR_parts
+	return AP_cams, AP_parts, siou_score, ade, PR_cams, PR_parts
