@@ -121,7 +121,9 @@ def to_center_point_format(bbox):
     mid_y = (y1 + y2) / 2
     width = x2 - x1
     height = y2 - y1
-    return tf.cast(tf.stack([mid_x, mid_y, width, height], axis=-1), dtype=tf.int32)
+    return tf.cast(tf.cast(
+        tf.stack([mid_x, mid_y, width, height], axis=-1), \
+            dtype=tf.int32), dtype=tf.float32)
 
 def to_two_point_format(bbox):
     # Convert from (mid_x, mid_y, width, height) to (x1, y1, x2, y2)
@@ -130,7 +132,9 @@ def to_two_point_format(bbox):
     y1 = mid_y - height / 2
     x2 = mid_x + width / 2
     y2 = mid_y + height / 2
-    return tf.cast(tf.stack([x1, y1, x2, y2], axis=-1), dtype=tf.int32)
+    return tf.cast(tf.cast(
+        tf.stack([x1, y1, x2, y2], axis=-1), \
+            dtype=tf.int32), dtype=tf.float32)
 
 
 # Additional utilities
