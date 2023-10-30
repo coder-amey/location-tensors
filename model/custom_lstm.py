@@ -101,7 +101,7 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 
 		# Derive variables for the next timestep
 		x = Reshape((1, num_features))(y) # [!] VERY IMPORTANT TO INCLUDE A TIME-STEP
-		# last_pos = box_pred
+		last_pos = box_pred
 
 		# Forward output
 		predictions.append(cam_pred)
