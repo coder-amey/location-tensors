@@ -1,4 +1,4 @@
-model_name = "robust_lstm_mse_ep200.ml" # "robust_lstm.ml"
+model_name = "mse_giou_diag_var_context_50ep.ml" # "robust_lstm.ml"
 
 from model import custom_lstm as lstm
 from global_config.global_config import N_INPUT_TSTEPS, N_OUTPUT_TSTEPS, TENSOR_DATA_PATH, MODEL_PATH
