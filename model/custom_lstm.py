@@ -19,7 +19,7 @@ from global_config.global_config import (
 	MODEL_PATH,
 	N_INPUT_TSTEPS, N_OUTPUT_TSTEPS, NUM_CAMS, NUM_FEATURES,
 	EPOCHS, TRAIN_BATCH_SIZE, TEST_BATCH_SIZE,
-	CAM_LOSS, BOX_LOSS, CAM_LOSS_WT, BOX_LOSS_WT)
+	CAM_LOSS, CAM_LOSS_WT)
 
 from loader.loader import load_dataset
 from utils.utils import (
@@ -33,8 +33,8 @@ CAVEAT: Using n + 1 cameras
 
 
 def custom_regression_loss(box_true, box_pred):
-	box_loss = 0.001 * MeanSquaredError()(box_true, box_pred)
-	diag_loss = 0.001 * MeanAbsoluteError()(
+	box_loss = 0.0002 * MeanSquaredError()(box_true, box_pred)
+	diag_loss = 0.0002 * MeanAbsoluteError()(
 		    tf.square(box_true[:, 2] - box_true[:, 0]) + tf.square(box_true[:, 3] - box_true[:, 1]),
 			tf.square(box_pred[:, 2] - box_pred[:, 0]) + tf.square(box_pred[:, 3] - box_pred[:, 1]))
 	# Reformat the boxes from 2-point format to min-max format with y leading x
