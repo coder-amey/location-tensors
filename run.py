@@ -1,8 +1,8 @@
-gpu_server = True
+gpu_server = False
 parallel_objects = (not gpu_server) and False
 selected_gpu = "0"
 
-mode = "new"  # new, load or enhance
+mode = "load"  # new, load or enhance
 model_name = "mse_diag_const_context_xywh_test.ml" # "robust_lstm.ml"
 
 """
