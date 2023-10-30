@@ -68,12 +68,15 @@ def generate_targets(Y, num_cams=NUM_CAMS):
     return targets
 
 
-def targets2tensors(targets, num_cams=NUM_CAMS):
+def targets2tensors(targets, num_cams=NUM_CAMS, reformat_targets=True):
     """t_steps * [Y_cam(batch_size, cams), Y_box(batch_size, 4)]
         -> Y(batch_size, t_steps, cams+4)"""
     Y = []
     for i in range(0, len(targets), 2):
-        Y.append(tf.concat([targets[i], targets[i + 1]], axis=1))
+        if reformat_targets:
+            Y.append(tf.concat([targets[i], to_two_point_format(targets[i + 1])], axis=1))
+        else:
+            Y.append(tf.concat([targets[i], targets[i + 1]], axis=1))
     return tf.stack(Y, axis=1)
 
 

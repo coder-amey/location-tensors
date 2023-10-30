@@ -85,6 +85,7 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 
 	# Decoder LSTM
 	for block_index in range(n_output_tsteps):
+		# LSTM cell
 		y, h, c = RNN(LSTMCell(units=num_features), \
 					  return_state=True)(x, initial_state=[h, c])
 		intermediate_layer = Dense(units=num_features, activation='sigmoid')(y)
@@ -101,10 +102,9 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 		x = Reshape((1, num_features))(y) # [!] VERY IMPORTANT TO INCLUDE A TIME-STEP
 		last_pos = box_pred
 
-		# Convert the predicted box into two-point format
-		formatted_box_pred = Lambda(lambda x: to_two_point_format(x))(box_pred)
+		# Forward output
 		predictions.append(cam_pred)
-		predictions.append(formatted_box_pred)
+		predictions.append(box_pred)
 
 	# Compile model
 	loss = {}
