@@ -1,9 +1,11 @@
-gpu_server = False
+gpu_server = True
 parallel_objects = (not gpu_server) and False
 selected_gpu = "0"
 
-mode = "load"  # new, load or enhance
-model_name = "mse_diag_const_context_xywh_test.ml" # "robust_lstm.ml"
+mode = "new"  # new, load or enhance
+model_name = "mse_diag_const_context_xywh_50ep.ml"
+# mse_diag_const_context_xywh_50ep.ml
+# mse_diag_var_context_xywh_50ep.ml
 
 """
 CHECKLIST

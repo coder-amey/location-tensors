@@ -1,6 +1,5 @@
 import os
-from tensorflow.keras.losses import CategoricalCrossentropy, MeanSquaredError
-from tensorflow_addons.losses import GIoULoss
+from tensorflow.keras.losses import CategoricalCrossentropy
 
 # PATHS
 DATA_PATH = os.path.join("/dcs/large/u2288122/Workspace/location-tensors/data/")
@@ -28,13 +27,11 @@ OCCLUSION_THRESHOLD = 6
 RANDOM_SEED = 47
 TRAIN_TEST_SPLIT = 0.25
 NUM_FEATURES = 5
-EPOCHS = 10
+EPOCHS = 50
 TRAIN_BATCH_SIZE = 64
 TEST_BATCH_SIZE = 128
 CAM_LOSS = CategoricalCrossentropy()
-BOX_LOSS = MeanSquaredError()           # GIoULoss() or MeanSquaredError()
 CAM_LOSS_WT = 100          # Needs motivation
-BOX_LOSS_WT = 0.001        # MSE ~ 500000 -> 0.001; GIOU ~ 2 -> 400
 
 # IMAGE-DATA PARAMS
 NUM_CAMS = 15
