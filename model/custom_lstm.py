@@ -25,7 +25,7 @@ from loader.loader import load_dataset
 from utils.utils import (
 	SIoU,
 	store_pkl, load_pkl,
-	tensor_encode_one_hot, tensor_decode_one_hot, to_center_point_format, to_two_point_format,
+	tensor_encode_one_hot, tensor_decode_one_hot,
 	get_partition, generate_targets, targets2tensors)
 '''
 CAVEAT: Using n + 1 cameras
@@ -34,11 +34,13 @@ CAVEAT: Using n + 1 cameras
 
 def custom_regression_loss(box_true, box_pred):
 	box_loss = 0.001 * MeanSquaredError()(box_true, box_pred)
-	giou_loss = 400 * GIoULoss()(box_true, box_pred)
 	diag_loss = 0.001 * MeanAbsoluteError()(
 		    tf.square(box_true[:, 2] - box_true[:, 0]) + tf.square(box_true[:, 3] - box_true[:, 1]),
 			tf.square(box_pred[:, 2] - box_pred[:, 0]) + tf.square(box_pred[:, 3] - box_pred[:, 1]))
-
+	# Reformat the boxes from 2-point format to min-max format with y leading x
+	formatted_box_true = tf.gather(box_true, [3, 0, 1, 2], axis=1)
+	formatted_box_pred = tf.gather(box_pred, [3, 0, 1, 2], axis=1)
+	giou_loss = 400 * GIoULoss()(formatted_box_true, formatted_box_pred)
 	return box_loss + giou_loss + diag_loss
 
 
@@ -75,7 +77,7 @@ def define_model(n_input_tsteps=N_INPUT_TSTEPS, n_output_tsteps=N_OUTPUT_TSTEPS,
 	predictions = []
 	input_layer = Input(shape=(n_input_tsteps, num_features))
 	# Prepare the context for the regressor in center-point format
-	last_pos = Lambda(lambda x: to_center_point_format(x[:, -1, 1:]))(input_layer)
+	last_pos = Lambda(lambda x: x[:, -1, 1:])(input_layer)
 
 	# Encoder LSTM
 	encoder_lstm = LSTM(units=num_features, return_state=True)

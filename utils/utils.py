@@ -68,15 +68,12 @@ def generate_targets(Y, num_cams=NUM_CAMS):
     return targets
 
 
-def targets2tensors(targets, num_cams=NUM_CAMS, reformat_targets=True):
+def targets2tensors(targets, num_cams=NUM_CAMS):
     """t_steps * [Y_cam(batch_size, cams), Y_box(batch_size, 4)]
         -> Y(batch_size, t_steps, cams+4)"""
     Y = []
     for i in range(0, len(targets), 2):
-        if reformat_targets:
-            Y.append(tf.concat([targets[i], to_two_point_format(targets[i + 1])], axis=1))
-        else:
-            Y.append(tf.concat([targets[i], targets[i + 1]], axis=1))
+        Y.append(tf.concat([targets[i], targets[i + 1]], axis=1))
     return tf.stack(Y, axis=1)
 
 
@@ -115,29 +112,6 @@ def decode_2d_one_hot(one_hot_tensor):
             tf.argmax(one_hot_tensor[:, 0:NUM_CAMS], axis=1), axis=-1), dtype=tf.float32)
     pos_tensor = one_hot_tensor[:, NUM_CAMS:]
     return tf.concat([cam_tensor, pos_tensor], axis=1)
-
-
-def to_center_point_format(bbox):
-    # Convert from (x1, y1, x2, y2) to (mid_x, mid_y, width, height)
-    x1, y1, x2, y2 = tf.unstack(bbox, axis=-1)
-    mid_x = (x1 + x2) / 2
-    mid_y = (y1 + y2) / 2
-    width = x2 - x1
-    height = y2 - y1
-    return tf.cast(tf.cast(
-        tf.stack([mid_x, mid_y, width, height], axis=-1), \
-            dtype=tf.int32), dtype=tf.float32)
-
-def to_two_point_format(bbox):
-    # Convert from (mid_x, mid_y, width, height) to (x1, y1, x2, y2)
-    mid_x, mid_y, width, height = tf.unstack(bbox, axis=-1)
-    x1 = mid_x - width / 2
-    y1 = mid_y - height / 2
-    x2 = mid_x + width / 2
-    y2 = mid_y + height / 2
-    return tf.cast(tf.cast(
-        tf.stack([x1, y1, x2, y2], axis=-1), \
-            dtype=tf.int32), dtype=tf.float32)
 
 
 # Additional utilities
