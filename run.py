@@ -3,7 +3,7 @@ parallel_objects = (not gpu_server) and True
 selected_gpu = "0"
 
 mode = "load"  # new, load or enhance
-model_name = "enhanced_mse_giou_diag_const_context_60ep.ml"
+model_name = "mse_giou_diag_var_context_50ep.ml"
 # mse_giou_diag_const_context_50ep.ml
 # mse_giou_diag_var_context_50ep.ml
 
@@ -105,7 +105,7 @@ if not gpu_server:
     if parallel_objects:
         Y = []
         Y_pred = []
-        for key in ['10_13_12_106_10_13_13_190', '10_13_12_107_10_13_13_195']:
+        for key in ['7_11_7_55_7_11_6_70', '7_11_7_59_7_11_6_73']:
             # trajectory = list(obj_trajectories.keys())[key]
             x, y = generate_tensors(trajectories_dict={key: obj_trajectories[key]}, \
                  save_to_file=False)
